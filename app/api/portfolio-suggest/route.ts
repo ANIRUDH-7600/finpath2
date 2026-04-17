@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { prisma } from '@/lib/prisma'
 import { suggestPortfolio } from '@/lib/agents/portfolio'
 
 export async function POST(req: NextRequest) {
@@ -8,20 +8,26 @@ export async function POST(req: NextRequest) {
 
     const result = await suggestPortfolio(risk_score, monthly_income)
 
-    const { error } = await supabase.from('portfolio_profiles').upsert(
-      {
-        user_id,
+    await prisma.portfolioProfile.upsert({
+      where: { user_id },
+      update: {
         risk_score,
-        allocation: result.allocation,
-        instruments: result.instruments,
+        allocation: JSON.stringify(result.allocation),
+        instruments: JSON.stringify(result.instruments),
         sip_amount: result.sip_amount,
         reasoning: result.reasoning,
         macro_note: result.macro_note,
       },
-      { onConflict: 'user_id' }
-    )
-
-    if (error) throw error
+      create: {
+        user_id,
+        risk_score,
+        allocation: JSON.stringify(result.allocation),
+        instruments: JSON.stringify(result.instruments),
+        sip_amount: result.sip_amount,
+        reasoning: result.reasoning,
+        macro_note: result.macro_note,
+      },
+    })
 
     return Response.json(result)
   } catch (error) {

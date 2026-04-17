@@ -1,15 +1,15 @@
+// prisma/schema.prisma
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"  // This creates dev.db file in prisma folder
 }
 
 model User {
-  id                  String             @id @default(uuid()) @db.Uuid
+  id                  String             @id @default(cuid())
   name                String
   email               String?            @unique
   monthly_income      Float              @default(0)
@@ -31,23 +31,24 @@ model User {
 }
 
 model Transaction {
-  id         String   @id @default(uuid()) @db.Uuid
-  user_id    String   @db.Uuid
+  id         String   @id @default(cuid())
+  user_id    String
   amount     Float
   merchant   String
   category   String
-  date       DateTime @db.Date
+  date       String
   note       String   @default("")
   created_at DateTime @default(now())
 
   user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
+  @@index([user_id])
   @@map("transactions")
 }
 
 model Goal {
-  id                  String   @id @default(uuid()) @db.Uuid
-  user_id             String   @db.Uuid
+  id                  String   @id @default(cuid())
+  user_id             String
   title               String
   target_amount       Float
   current_savings     Float    @default(0)
@@ -59,15 +60,16 @@ model Goal {
 
   user                User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
+  @@index([user_id])
   @@map("goals")
 }
 
 model PortfolioProfile {
-  id          String   @id @default(uuid()) @db.Uuid
-  user_id     String   @unique @db.Uuid
+  id          String   @id @default(cuid())
+  user_id     String   @unique
   risk_score  Int?
-  allocation  Json?
-  instruments Json?
+  allocation  String?   // Stored as JSON string
+  instruments String?   // Stored as JSON string
   sip_amount  Float?
   reasoning   String?
   macro_note  String?
@@ -75,12 +77,13 @@ model PortfolioProfile {
 
   user        User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
+  @@index([user_id])
   @@map("portfolio_profiles")
 }
 
 model NudgeLog {
-  id            String   @id @default(uuid()) @db.Uuid
-  user_id       String   @db.Uuid
+  id            String   @id @default(cuid())
+  user_id       String
   merchant      String?
   amount        Float?
   category      String?
@@ -90,5 +93,33 @@ model NudgeLog {
 
   user          User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
+  @@index([user_id])
   @@map("nudge_log")
+}
+
+model SpendingPattern {
+  id           String   @id @default(cuid())
+  user_id      String
+  pattern_type String   // "micro_transactions", "subscription_creep", "late_night", etc.
+  amount       Float
+  frequency    String
+  suggestion   String
+  detected_at  DateTime @default(now())
+  resolved     Boolean  @default(false)
+
+  @@index([user_id])
+  @@map("spending_patterns")
+}
+
+model BehavioralInsight {
+  id          String   @id @default(cuid())
+  user_id     String
+  insight_type String  // "leakage", "saving_opportunity", "behavioral_tip"
+  message     String
+  priority    String   // "high", "medium", "low"
+  read        Boolean  @default(false)
+  created_at  DateTime @default(now())
+
+  @@index([user_id])
+  @@map("behavioral_insights")
 }

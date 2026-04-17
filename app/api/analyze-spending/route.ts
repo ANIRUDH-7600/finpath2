@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { prisma } from '@/lib/prisma'
 import { analyzeBehavior } from '@/lib/agents/behavioral'
+import type { Transaction } from '@/types'
 
 export async function POST(req: NextRequest) {
   try {
@@ -10,14 +11,13 @@ export async function POST(req: NextRequest) {
       return Response.json({ error: 'user_id required' }, { status: 400 })
     }
 
-    const { data } = await supabase
-      .from('transactions')
-      .select('*')
-      .eq('user_id', user_id)
-      .order('date', { ascending: false })
-      .limit(50)
+    const transactions = await prisma.transaction.findMany({
+      where: { user_id },
+      orderBy: { date: 'desc' },
+      take: 50,
+    })
 
-    const result = await analyzeBehavior(data ?? [])
+    const result = await analyzeBehavior(transactions as unknown as Transaction[])
     return Response.json(result)
   } catch (error) {
     console.error('analyze-spending error:', error)

@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { prisma } from '@/lib/prisma'
 
 export async function GET(req: NextRequest) {
   try {
@@ -10,15 +10,12 @@ export async function GET(req: NextRequest) {
       return Response.json({ error: 'user_id required' }, { status: 400 })
     }
 
-    const { data, error } = await supabase
-      .from('goals')
-      .select('*')
-      .eq('user_id', user_id)
-      .eq('status', 'active')
-      .order('created_at', { ascending: false })
+    const goals = await prisma.goal.findMany({
+      where: { user_id, status: 'active' },
+      orderBy: { created_at: 'desc' },
+    })
 
-    if (error) throw error
-    return Response.json(data ?? [])
+    return Response.json(goals)
   } catch (error) {
     console.error('goals GET error:', error)
     return Response.json({ error: 'Failed to fetch goals' }, { status: 500 })
@@ -27,24 +24,20 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json()
-    const { user_id, title, target_amount, current_savings, deadline_months } = body
+    const { user_id, title, target_amount, current_savings, deadline_months } = await req.json()
 
-    const { data, error } = await supabase
-      .from('goals')
-      .insert({
+    const goal = await prisma.goal.create({
+      data: {
         user_id,
         title,
         target_amount,
         current_savings: current_savings ?? 0,
         deadline_months,
         status: 'active',
-      })
-      .select()
-      .single()
+      },
+    })
 
-    if (error) throw error
-    return Response.json(data)
+    return Response.json(goal)
   } catch (error) {
     console.error('goals POST error:', error)
     return Response.json({ error: 'Failed to create goal' }, { status: 500 })

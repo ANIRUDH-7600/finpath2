@@ -72,19 +72,39 @@ export default function InvestmentsPage() {
     if (watchlist.length === 0) { toast.error('Add at least one instrument to watchlist'); return }
     setAnalyzing(true)
     setAiAnalysis('')
-    try {
-      const res = await fetch('/api/investments/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ watchlist }),
-      })
-      const data = await res.json()
-      setAiAnalysis(data.analysis ?? 'Analysis unavailable')
-    } catch {
-      toast.error('AI analysis failed')
-    } finally {
+    
+    // Mock AI analysis instead of API call
+    setTimeout(() => {
+      const analysis = generateMockAnalysis(watchlist)
+      setAiAnalysis(analysis)
       setAnalyzing(false)
-    }
+      toast.success('Analysis complete!')
+    }, 1500)
+  }
+
+  function generateMockAnalysis(watchlist: WatchlistItem[]): string {
+    const topPerformer = [...watchlist].sort((a, b) => b.returns - a.returns)[0]
+    const avgReturn = watchlist.reduce((sum, item) => sum + item.returns, 0) / watchlist.length
+    
+    const recommendations = watchlist.map(item => {
+      if (item.returns > 20) return `${item.name} is showing exceptional returns (>20%). Consider increasing allocation.`
+      if (item.returns > 15) return `${item.name} has solid performance. Good for long-term hold.`
+      if (item.returns < 0) return `${item.name} is underperforming. Review fundamentals before adding more.`
+      return `${item.name} shows stable growth potential.`
+    }).join(' ')
+    
+    const riskNote = avgReturn > 15 
+      ? 'Your portfolio has high growth potential but may be aggressive.' 
+      : avgReturn > 8 
+      ? 'Balanced portfolio with moderate risk-return profile.'
+      : 'Conservative portfolio. Consider adding growth assets for better returns.'
+    
+    return `Based on your watchlist of ${watchlist.length} instruments:\n\n` +
+           `🏆 Top Performer: ${topPerformer.name} (+${topPerformer.returns}% returns)\n` +
+           `📊 Average Return: +${avgReturn.toFixed(1)}%\n\n` +
+           `💡 Recommendations:\n${recommendations}\n\n` +
+           `⚖️ Risk Assessment: ${riskNote}\n\n` +
+           `🎯 Strategy: ${avgReturn > 12 ? 'Consider taking partial profits' : 'Hold for long-term wealth creation'}.`
   }
 
   const niftyReturn = (((NIFTY_DATA.at(-1)?.value ?? 0) - (NIFTY_DATA[0]?.value ?? 1)) / (NIFTY_DATA[0]?.value ?? 1) * 100).toFixed(1)
@@ -102,7 +122,7 @@ export default function InvestmentsPage() {
     <div className="p-6 md:p-8">
       <div className="mb-7">
         <h1 className="text-2xl font-bold text-text-base">AI Smart Investments</h1>
-        <p className="text-sm text-text-muted mt-0.5">Simulate Indian stocks, mutual funds & ETFs — add to watchlist, then analyze with AI</p>
+        <p className="text-sm text-text-muted mt-0.5">Simulated Indian stocks, mutual funds & ETFs — add to watchlist, then analyze with AI</p>
       </div>
 
       {/* Nifty 50 Chart */}

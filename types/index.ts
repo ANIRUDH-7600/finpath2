@@ -98,3 +98,10 @@ export interface DashboardData {
   recent_transactions: Transaction[]
   money_saved_by_guardian: number
 }
+
+export interface MacroInsight {
+  market_outlook: string
+  rbi_note: string
+  action_tip: string
+  sentiment: 'bullish' | 'neutral' | 'cautious'
+}

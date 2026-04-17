@@ -1,23 +1,15 @@
 import { NextRequest } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { prisma } from '@/lib/prisma'
 import { buildGoalPlan } from '@/lib/agents/goal'
 
 export async function POST(req: NextRequest) {
   try {
-    const { user_id, title, target_amount, current_savings, deadline_months, income } =
-      await req.json()
+    const { user_id, title, target_amount, current_savings, deadline_months, income } = await req.json()
 
-    const result = await buildGoalPlan(
-      title,
-      target_amount,
-      current_savings,
-      deadline_months,
-      income
-    )
+    const result = await buildGoalPlan(title, target_amount, current_savings, deadline_months, income)
 
-    const { data: savedGoal, error } = await supabase
-      .from('goals')
-      .insert({
+    const savedGoal = await prisma.goal.create({
+      data: {
         user_id,
         title,
         target_amount,
@@ -26,11 +18,8 @@ export async function POST(req: NextRequest) {
         daily_save_required: result.daily_save,
         narrative: result.narrative,
         status: 'active',
-      })
-      .select()
-      .single()
-
-    if (error) throw error
+      },
+    })
 
     return Response.json({ ...result, goal: savedGoal })
   } catch (error) {

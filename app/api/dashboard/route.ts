@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { prisma } from '@/lib/prisma'
 import { analyzeBehavior } from '@/lib/agents/behavioral'
-import type { DashboardData } from '@/types'
+import type { DashboardData, Transaction } from '@/types'
 
 export async function GET(req: NextRequest) {
   try {
@@ -12,57 +12,79 @@ export async function GET(req: NextRequest) {
       return Response.json({ error: 'user_id required' }, { status: 400 })
     }
 
-    const [userRes, txnsRes, goalsRes, portfolioRes, nudgeRes] = await Promise.all([
-      supabase.from('users').select('*').eq('id', user_id).single(),
-      supabase
-        .from('transactions')
-        .select('*')
-        .eq('user_id', user_id)
-        .order('date', { ascending: false })
-        .limit(50),
-      supabase
-        .from('goals')
-        .select('*')
-        .eq('user_id', user_id)
-        .eq('status', 'active')
-        .order('created_at', { ascending: false }),
-      supabase
-        .from('portfolio_profiles')
-        .select('*')
-        .eq('user_id', user_id)
-        .order('created_at', { ascending: false })
-        .limit(1),
-      supabase
-        .from('nudge_log')
-        .select('amount')
-        .eq('user_id', user_id)
-        .eq('user_action', 'skipped'),
+    const [user, transactions, goals, portfolio, nudgeSaved] = await Promise.all([
+      prisma.user.findUnique({ where: { id: user_id } }),
+      prisma.transaction.findMany({
+        where: { user_id },
+        orderBy: { date: 'desc' },
+        take: 50,
+      }),
+      prisma.goal.findMany({
+        where: { user_id, status: 'active' },
+        orderBy: { created_at: 'desc' },
+      }),
+      prisma.portfolioProfile.findUnique({ where: { user_id } }),
+      prisma.nudgeLog.findMany({
+        where: { user_id, user_action: 'skipped' },
+        select: { amount: true },
+      }),
     ])
 
-    const transactions = txnsRes.data ?? []
-    const analysis = await analyzeBehavior(transactions)
+    if (!user) {
+      return Response.json({ error: 'User not found' }, { status: 404 })
+    }
 
-    const moneySaved = (nudgeRes.data ?? []).reduce(
-      (sum, row) => sum + Number(row.amount ?? 0),
-      0
-    )
+    // Calculate real savings
+    const totalSpending = transactions.reduce((sum, t) => sum + t.amount, 0)
+    const monthlySpending = totalSpending // Adjust for date range if needed
+    const monthlyIncome = user.monthly_income || 0
+    const currentSavings = monthlyIncome - monthlySpending
 
-    const portfolio = portfolioRes.data?.[0]
+    // Pass real data to behavioral analysis
+    const analysis = await analyzeBehavior(transactions as unknown as Transaction[], {
+      monthlyIncome,
+      currentSavings,
+      monthlySpending
+    })
+
+    const moneySaved = nudgeSaved.reduce((sum, row) => sum + Number(row.amount ?? 0), 0)
+
+    const portfolioData = portfolio
       ? {
-          allocation: portfolioRes.data[0].allocation,
-          instruments: portfolioRes.data[0].instruments,
-          sip_amount: portfolioRes.data[0].sip_amount,
-          reasoning: portfolioRes.data[0].reasoning,
-          macro_note: portfolioRes.data[0].macro_note,
+          allocation: JSON.parse(portfolio.allocation ?? '{}'),
+          instruments: JSON.parse(portfolio.instruments ?? '[]'),
+          sip_amount: portfolio.sip_amount ?? Math.max(0, currentSavings * 0.5), // 50% of savings to SIP
+          reasoning: portfolio.reasoning ?? '',
+          macro_note: portfolio.macro_note ?? '',
         }
       : null
 
     const dashboardData: DashboardData = {
-      user: userRes.data!,
-      analysis,
-      goals: goalsRes.data ?? [],
-      portfolio,
-      recent_transactions: transactions.slice(0, 5),
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email ?? '',
+        monthly_income: user.monthly_income,
+        risk_appetite: user.risk_appetite,
+        created_at: user.created_at.toISOString(),
+      },
+      analysis: {
+        ...analysis,
+        monthly_total: monthlySpending,
+        savings_rate: monthlyIncome > 0 ? (currentSavings / monthlyIncome) * 100 : 0,
+      },
+      savings: currentSavings,
+      goals: goals.map(g => ({
+        ...g,
+        daily_save_required: g.daily_save_required ?? 0,
+        narrative: g.narrative ?? '',
+        created_at: g.created_at.toISOString(),
+      })),
+      portfolio: portfolioData,
+      recent_transactions: transactions.slice(0, 5).map(t => ({
+        ...t,
+        created_at: t.created_at.toISOString(),
+      })) as unknown as Transaction[],
       money_saved_by_guardian: moneySaved,
     }
 

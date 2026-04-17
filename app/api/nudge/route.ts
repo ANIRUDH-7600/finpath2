@@ -1,32 +1,23 @@
 import { NextRequest } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { prisma } from '@/lib/prisma'
 import { generateNudge } from '@/lib/agents/nudge'
 
 export async function POST(req: NextRequest) {
   try {
     const { user_id, merchant, amount, category, goal_id } = await req.json()
 
-    const { data: goal } = await supabase
-      .from('goals')
-      .select('*')
-      .eq('id', goal_id)
-      .single()
+    const goal = goal_id ? await prisma.goal.findUnique({ where: { id: goal_id } }) : null
 
     const sevenDaysAgo = new Date()
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+    const sevenDaysAgoStr = sevenDaysAgo.toISOString().split('T')[0]
 
-    const { data: recentTxns } = await supabase
-      .from('transactions')
-      .select('amount')
-      .eq('user_id', user_id)
-      .eq('category', category)
-      .gte('date', sevenDaysAgo.toISOString().split('T')[0])
+    const recentTxns = await prisma.transaction.findMany({
+      where: { user_id, category, date: { gte: sevenDaysAgoStr } },
+      select: { amount: true },
+    })
 
-    const weeklyCategorySpend = (recentTxns ?? []).reduce(
-      (sum, t) => sum + Number(t.amount),
-      0
-    )
-
+    const weeklyCategorySpend = recentTxns.reduce((sum: number, t) => sum + Number(t.amount), 0)
     const dailySaveRequired = goal?.daily_save_required ?? 0
     const daysBehind = goal
       ? Math.round(
@@ -46,20 +37,10 @@ export async function POST(req: NextRequest) {
     )
 
     if (nudge.show_nudge) {
-      const { data: logEntry } = await supabase
-        .from('nudge_log')
-        .insert({
-          user_id,
-          merchant,
-          amount,
-          category,
-          nudge_message: nudge.message ?? '',
-          user_action: 'pending',
-        })
-        .select()
-        .single()
-
-      return Response.json({ ...nudge, nudge_log_id: logEntry?.id })
+      const logEntry = await prisma.nudgeLog.create({
+        data: { user_id, merchant, amount, category, nudge_message: nudge.message ?? '', user_action: 'pending' },
+      })
+      return Response.json({ ...nudge, nudge_log_id: logEntry.id })
     }
 
     return Response.json(nudge)

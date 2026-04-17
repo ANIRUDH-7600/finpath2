@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server'
 import bcrypt from 'bcryptjs'
-import { supabase } from '@/lib/supabase'
+import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 
 const RegisterSchema = z.object({
@@ -26,11 +26,10 @@ export async function POST(req: NextRequest) {
 
     const { name, email, password, monthly_income, risk_appetite, phone } = parsed.data
 
-    const { data: existing } = await supabase
-      .from('users')
-      .select('id')
-      .eq('email', email)
-      .single()
+    const existing = await prisma.user.findUnique({
+      where: { email },
+      select: { id: true },
+    })
 
     if (existing) {
       return Response.json({ error: 'Email already registered' }, { status: 409 })
@@ -38,9 +37,8 @@ export async function POST(req: NextRequest) {
 
     const password_hash = await bcrypt.hash(password, 12)
 
-    const { data: user, error } = await supabase
-      .from('users')
-      .insert({
+    const user = await prisma.user.create({
+      data: {
         name,
         email,
         password_hash,
@@ -49,11 +47,17 @@ export async function POST(req: NextRequest) {
         phone,
         auth_provider: 'credentials',
         onboarding_complete: false,
-      })
-      .select('id, name, email, monthly_income, risk_appetite, avatar_url, onboarding_complete')
-      .single()
-
-    if (error) throw error
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        monthly_income: true,
+        risk_appetite: true,
+        avatar_url: true,
+        onboarding_complete: true,
+      },
+    })
 
     return Response.json(user, { status: 201 })
   } catch (error) {

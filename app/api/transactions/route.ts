@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { prisma } from '@/lib/prisma'
 
 export async function GET(req: NextRequest) {
   try {
@@ -11,20 +11,15 @@ export async function GET(req: NextRequest) {
       return Response.json({ error: 'user_id required' }, { status: 400 })
     }
 
-    let query = supabase
-      .from('transactions')
-      .select('*')
-      .eq('user_id', user_id)
-      .order('date', { ascending: false })
+    const transactions = await prisma.transaction.findMany({
+      where: {
+        user_id,
+        ...(category && category !== 'All' ? { category } : {}),
+      },
+      orderBy: { date: 'desc' },
+    })
 
-    if (category && category !== 'All') {
-      query = query.eq('category', category)
-    }
-
-    const { data, error } = await query
-
-    if (error) throw error
-    return Response.json(data ?? [])
+    return Response.json(transactions)
   } catch (error) {
     console.error('transactions GET error:', error)
     return Response.json({ error: 'Failed to fetch transactions' }, { status: 500 })
@@ -33,17 +28,13 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json()
-    const { user_id, amount, merchant, category, date, note } = body
+    const { user_id, amount, merchant, category, date, note } = await req.json()
 
-    const { data, error } = await supabase
-      .from('transactions')
-      .insert({ user_id, amount, merchant, category, date, note: note ?? '' })
-      .select()
-      .single()
+    const transaction = await prisma.transaction.create({
+      data: { user_id, amount, merchant, category, date: String(date), note: note ?? '' },
+    })
 
-    if (error) throw error
-    return Response.json(data)
+    return Response.json(transaction)
   } catch (error) {
     console.error('transactions POST error:', error)
     return Response.json({ error: 'Failed to save transaction' }, { status: 500 })

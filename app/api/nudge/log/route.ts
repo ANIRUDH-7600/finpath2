@@ -1,16 +1,14 @@
 import { NextRequest } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { prisma } from '@/lib/prisma'
 
 export async function POST(req: NextRequest) {
   try {
     const { nudge_log_id, user_action } = await req.json()
 
-    const { error } = await supabase
-      .from('nudge_log')
-      .update({ user_action })
-      .eq('id', nudge_log_id)
-
-    if (error) throw error
+    await prisma.nudgeLog.update({
+      where: { id: nudge_log_id },
+      data: { user_action },
+    })
 
     return Response.json({ success: true })
   } catch (error) {

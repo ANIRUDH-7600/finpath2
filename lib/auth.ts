@@ -1,8 +1,6 @@
 import { NextAuthOptions } from 'next-auth'
 import GoogleProvider from 'next-auth/providers/google'
-import CredentialsProvider from 'next-auth/providers/credentials'
-import bcrypt from 'bcryptjs'
-import { supabase } from './supabase'
+import { prisma } from './prisma'
 
 declare module 'next-auth' {
   interface Session {
@@ -43,79 +41,50 @@ export const authOptions: NextAuthOptions = {
       clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? '',
       allowDangerousEmailAccountLinking: true,
     }),
-
-    CredentialsProvider({
-      name: 'credentials',
-      credentials: {
-        email: { label: 'Email', type: 'email' },
-        password: { label: 'Password', type: 'password' },
-      },
-      async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) return null
-
-        const { data: user } = await supabase
-          .from('users')
-          .select('*')
-          .eq('email', credentials.email)
-          .single()
-
-        if (!user || !user.password_hash) return null
-
-        const valid = await bcrypt.compare(credentials.password, user.password_hash)
-        if (!valid) return null
-
-        return {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          image: user.avatar_url,
-          onboarding_complete: user.onboarding_complete,
-          monthly_income: user.monthly_income,
-          risk_appetite: user.risk_appetite,
-        }
-      },
-    }),
   ],
 
   callbacks: {
     async signIn({ user, account, profile }) {
       if (account?.provider === 'google') {
-        const { data: existing } = await supabase
-          .from('users')
-          .select('id, onboarding_complete')
-          .eq('email', user.email!)
-          .single()
+        try {
+          const existing = await prisma.user.findUnique({
+            where: { email: user.email! },
+            select: { id: true, onboarding_complete: true, monthly_income: true, risk_appetite: true },
+          })
 
-        if (existing) {
-          await supabase
-            .from('users')
-            .update({
-              avatar_url: user.image,
-              google_id: profile?.sub,
-              auth_provider: 'google',
+          if (existing) {
+            await prisma.user.update({
+              where: { id: existing.id },
+              data: {
+                avatar_url: user.image,
+                google_id: profile?.sub,
+                auth_provider: 'google',
+              },
             })
-            .eq('id', existing.id)
-          user.id = existing.id
-          user.onboarding_complete = existing.onboarding_complete
-        } else {
-          const { data: created } = await supabase
-            .from('users')
-            .insert({
-              name: user.name ?? 'User',
-              email: user.email,
-              avatar_url: user.image,
-              google_id: profile?.sub,
-              auth_provider: 'google',
-              monthly_income: 0,
-              onboarding_complete: false,
+            user.id = existing.id
+            user.onboarding_complete = existing.onboarding_complete
+            user.monthly_income = existing.monthly_income
+            user.risk_appetite = existing.risk_appetite
+          } else {
+            const created = await prisma.user.create({
+              data: {
+                name: user.name ?? 'User',
+                email: user.email!,
+                avatar_url: user.image,
+                google_id: profile?.sub,
+                auth_provider: 'google',
+                monthly_income: 0,
+                onboarding_complete: false,
+              },
             })
-            .select('id')
-            .single()
-
-          if (created) {
             user.id = created.id
             user.onboarding_complete = false
+            user.monthly_income = 0
+            user.risk_appetite = 3
           }
+        } catch (err) {
+          console.error('signIn error:', err)
+          return false
         }
       }
       return true

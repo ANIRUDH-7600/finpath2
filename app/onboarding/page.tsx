@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useSession } from 'next-auth/react'
 import { Loader2, Upload, CheckCircle, Zap } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { useAuth } from '@/lib/authContext'
 
 const RISK_QUESTIONS = [
   {
@@ -37,16 +37,34 @@ const inputClass = "w-full bg-[#1C1C1C] border border-border rounded-xl px-4 py-
 
 export default function OnboardingPage() {
   const router = useRouter()
-  const { user } = useAuth()
+  const { data: session, status } = useSession()
   const [step, setStep] = useState(1)
-  const [name, setName] = useState(user?.user_metadata?.full_name ?? '')
+  const [name, setName] = useState('')
   const [income, setIncome] = useState('')
   const [phone, setPhone] = useState('')
   const [riskAnswers, setRiskAnswers] = useState<number[]>([])
-  const [csvParsed, setCsvParsed] = useState<unknown[]>([])
+  const [csvParsed, setCsvParsed] = useState<Array<{ merchant: string; amount: number; date: string; category: string }>>([])
   const [csvLoading, setCsvLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [dragOver, setDragOver] = useState(false)
+
+  useEffect(() => {
+    if (session?.user?.name && !name) setName(session.user.name)
+    if (session?.user?.onboarding_complete) router.replace('/dashboard')
+  }, [session, router, name])
+
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen bg-surface flex items-center justify-center">
+        <Loader2 size={28} className="animate-spin text-brand" />
+      </div>
+    )
+  }
+
+  if (status === 'unauthenticated') {
+    router.replace('/auth/signin')
+    return null
+  }
 
   const riskScore = riskAnswers.length === 3
     ? Math.round(riskAnswers.reduce((a, b) => a + b, 0) / 3)
@@ -73,44 +91,47 @@ export default function OnboardingPage() {
     setDragOver(false)
     const file = e.dataTransfer.files[0]
     if (file) handleFile(file)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   async function handleComplete() {
+    const userId = session?.user?.id
+    if (!userId) {
+      toast.error('Session expired. Please sign in again.')
+      router.replace('/auth/signin')
+      return
+    }
     setSubmitting(true)
     try {
-      const createUserRes = await fetch('/api/users', {
-        method: 'POST',
+      // User already exists — NextAuth created them on Google sign-in. PATCH to update profile.
+      const updateRes = await fetch('/api/users', {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name,
-          monthly_income: parseFloat(income),
+          user_id: userId,
+          monthly_income: parseFloat(income) || 0,
           risk_appetite: riskScore,
-          phone,
-          email: user?.email,
-          google_id: user?.id,
-          auth_provider: 'google',
-          onboarding_complete: true,
+          phone: phone || null,
         }),
       })
 
-      if (!createUserRes.ok) {
-        const errData = await createUserRes.json()
-        throw new Error(errData.error ?? 'Failed to create user')
+      if (!updateRes.ok) {
+        const err = await updateRes.json()
+        throw new Error(err.error ?? 'Failed to update profile')
       }
 
-      const createdUser = await createUserRes.json()
-      localStorage.setItem('finpath_user', JSON.stringify(createdUser))
+      const updatedUser = await updateRes.json()
+      localStorage.setItem('finpath_user', JSON.stringify(updatedUser))
 
       if (csvParsed.length > 0) {
         await Promise.all(
-          csvParsed.slice(0, 50).map((tx: unknown) => {
-            const t = tx as { merchant: string; amount: number; date: string; category: string }
-            return fetch('/api/transactions', {
+          csvParsed.slice(0, 50).map((t) =>
+            fetch('/api/transactions', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ user_id: createdUser.id, ...t }),
+              body: JSON.stringify({ user_id: userId, ...t }),
             })
-          })
+          )
         )
       }
 
@@ -150,18 +171,36 @@ export default function OnboardingPage() {
               </div>
               <div>
                 <label className="text-xs font-medium text-text-muted block mb-1.5">Your name</label>
-                <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Arjun Mehta" className={inputClass} />
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Arjun Mehta"
+                  className={inputClass}
+                />
               </div>
               <div>
                 <label className="text-xs font-medium text-text-muted block mb-1.5">Monthly income</label>
                 <div className="relative">
                   <span className="absolute left-4 top-3 text-text-muted text-sm">₹</span>
-                  <input type="number" value={income} onChange={(e) => setIncome(e.target.value)} placeholder="75000" className={`${inputClass} pl-8`} />
+                  <input
+                    type="number"
+                    value={income}
+                    onChange={(e) => setIncome(e.target.value)}
+                    placeholder="75000"
+                    className={`${inputClass} pl-8`}
+                  />
                 </div>
               </div>
               <div>
                 <label className="text-xs font-medium text-text-muted block mb-1.5">Phone (optional, for SMS alerts)</label>
-                <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+91 98765 43210" className={inputClass} />
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="+91 98765 43210"
+                  className={inputClass}
+                />
               </div>
               <button
                 onClick={() => name && income && setStep(2)}
@@ -188,8 +227,16 @@ export default function OnboardingPage() {
                       return (
                         <button
                           key={opt.score}
-                          onClick={() => { const a = [...riskAnswers]; a[qi] = opt.score; setRiskAnswers(a) }}
-                          className={`w-full text-left px-4 py-2.5 rounded-xl text-sm border transition-colors ${selected ? 'border-brand bg-brand-muted text-brand font-medium' : 'border-border text-text-muted hover:border-brand/30 hover:text-text-base'}`}
+                          onClick={() => {
+                            const a = [...riskAnswers]
+                            a[qi] = opt.score
+                            setRiskAnswers(a)
+                          }}
+                          className={`w-full text-left px-4 py-2.5 rounded-xl text-sm border transition-colors ${
+                            selected
+                              ? 'border-brand bg-brand-muted text-brand font-medium'
+                              : 'border-border text-text-muted hover:border-brand/30 hover:text-text-base'
+                          }`}
                         >
                           {opt.label}
                         </button>
@@ -218,7 +265,9 @@ export default function OnboardingPage() {
                 onDrop={handleDrop}
                 onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
                 onDragLeave={() => setDragOver(false)}
-                className={`border-2 border-dashed rounded-2xl p-8 text-center transition-colors ${dragOver ? 'border-brand bg-brand-muted' : 'border-border hover:border-brand/40'}`}
+                className={`border-2 border-dashed rounded-2xl p-8 text-center transition-colors ${
+                  dragOver ? 'border-brand bg-brand-muted' : 'border-border hover:border-brand/40'
+                }`}
               >
                 {csvLoading ? (
                   <div className="flex flex-col items-center gap-2">
@@ -236,7 +285,12 @@ export default function OnboardingPage() {
                     <p className="text-sm text-text-muted">Drag & drop your bank CSV or UPI PDF</p>
                     <label className="cursor-pointer">
                       <span className="text-xs text-brand font-medium underline">Browse file</span>
-                      <input type="file" accept=".csv,.pdf" className="hidden" onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} />
+                      <input
+                        type="file"
+                        accept=".csv,.pdf"
+                        className="hidden"
+                        onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
+                      />
                     </label>
                     <p className="text-xs text-text-faint">Supports HDFC/SBI CSV · PhonePe/GPay PDF</p>
                   </div>
