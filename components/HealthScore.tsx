@@ -21,12 +21,8 @@ export default function HealthScore({ score, label }: Props) {
     return () => clearInterval(timer)
   }, [score])
 
-  const color =
-    score >= 75 ? 'text-green-500' : score >= 50 ? 'text-amber-500' : 'text-red-500'
-  const stroke =
-    score >= 75 ? '#22c55e' : score >= 50 ? '#f59e0b' : '#ef4444'
-  const ringBg =
-    score >= 75 ? '#dcfce7' : score >= 50 ? '#fef3c7' : '#fee2e2'
+  const color = score >= 75 ? '#02FF9D' : score >= 50 ? '#f59e0b' : '#ef4444'
+  const trackColor = 'rgba(255,255,255,0.08)'
 
   const radius = 52
   const circumference = 2 * Math.PI * radius
@@ -36,21 +32,12 @@ export default function HealthScore({ score, label }: Props) {
     <div className="flex flex-col items-center justify-center gap-2">
       <div className="relative inline-flex items-center justify-center">
         <svg width={128} height={128}>
-          <circle cx={64} cy={64} r={radius} fill={ringBg} stroke="none" />
+          <circle cx={64} cy={64} r={radius} fill={`${color}10`} />
+          <circle cx={64} cy={64} r={radius} fill="none" stroke={trackColor} strokeWidth={8} />
           <circle
-            cx={64}
-            cy={64}
-            r={radius}
+            cx={64} cy={64} r={radius}
             fill="none"
-            stroke="#e5e7eb"
-            strokeWidth={8}
-          />
-          <circle
-            cx={64}
-            cy={64}
-            r={radius}
-            fill="none"
-            stroke={stroke}
+            stroke={color}
             strokeWidth={8}
             strokeLinecap="round"
             strokeDasharray={circumference}
@@ -59,9 +46,9 @@ export default function HealthScore({ score, label }: Props) {
             style={{ transition: 'stroke-dashoffset 0.05s ease' }}
           />
         </svg>
-        <span className={`absolute text-3xl font-bold ${color}`}>{displayed}</span>
+        <span className="absolute text-3xl font-bold" style={{ color }}>{displayed}</span>
       </div>
-      <span className={`text-sm font-semibold ${color}`}>{label}</span>
+      <span className="text-sm font-semibold" style={{ color }}>{label}</span>
     </div>
   )
 }

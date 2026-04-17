@@ -5,19 +5,10 @@
 @theme {
   --font-sans: Inter, system-ui, -apple-system, sans-serif;
 
-  /* Brand green */
-  --color-brand: #02ff9d;
-  --color-brand-dim: #00d980;
+  --color-brand: #02FF9D;
+  --color-brand-dim: #01D97F;
   --color-brand-muted: rgba(2, 255, 157, 0.12);
 
-  /* Dark surfaces */
-  --color-dark-950: #020916;
-  --color-dark-900: #060d1f;
-  --color-dark-800: #0d1526;
-  --color-dark-700: #122038;
-  --color-dark-600: #1a3050;
-
-  /* Semantic aliases resolved via CSS vars below */
   --color-surface: var(--surface);
   --color-surface-raised: var(--surface-raised);
   --color-border: var(--border);
@@ -26,27 +17,27 @@
   --color-text-faint: var(--text-faint);
 }
 
-/* ─── Light Mode ───────────────────────────────────────────── */
+/* ─── Light Mode ──────────────────────────────────────────── */
 :root {
-  --surface: #ffffff;
-  --surface-raised: #f4f7f6;
-  --border: #e2e8f0;
-  --text-base: #0f172a;
-  --text-muted: #475569;
-  --text-faint: #94a3b8;
+  --surface: #FFFFFF;
+  --surface-raised: #F5F5F5;
+  --border: #E5E5E5;
+  --text-base: #0A0A0A;
+  --text-muted: #555555;
+  --text-faint: #999999;
 }
 
-/* ─── Dark Mode ────────────────────────────────────────────── */
+/* ─── Dark Mode ───────────────────────────────────────────── */
 .dark {
-  --surface: #0d1526;
-  --surface-raised: #122038;
-  --border: #1e2f4a;
-  --text-base: #f1f5f9;
-  --text-muted: #94a3b8;
-  --text-faint: #475569;
+  --surface: #0A0A0A;
+  --surface-raised: #111111;
+  --border: #2A2A2A;
+  --text-base: #FFFFFF;
+  --text-muted: #888888;
+  --text-faint: #444444;
 }
 
-/* ─── Base ─────────────────────────────────────────────────── */
+/* ─── Base ────────────────────────────────────────────────── */
 html {
   background: var(--surface);
   color: var(--text-base);
@@ -61,14 +52,9 @@ body {
 }
 
 /* ─── Scrollbar ───────────────────────────────────────────── */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 3px;
-}
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* ─── Slider accent ──────────────────────────────────────── */
+input[type="range"] { accent-color: #02FF9D; }

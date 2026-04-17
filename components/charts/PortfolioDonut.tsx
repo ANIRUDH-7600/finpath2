@@ -19,10 +19,10 @@ interface Props {
 }
 
 const SEGMENTS = [
-  { key: 'equity', label: 'Equity', color: '#7c3aed' },
-  { key: 'debt', label: 'Debt', color: '#22c55e' },
+  { key: 'equity', label: 'Equity', color: '#02FF9D' },
+  { key: 'debt', label: 'Debt', color: '#3b82f6' },
   { key: 'gold', label: 'Gold', color: '#f59e0b' },
-  { key: 'cash', label: 'Cash', color: '#9ca3af' },
+  { key: 'cash', label: 'Cash', color: '#888888' },
 ]
 
 export default function PortfolioDonut({ allocation }: Props) {
@@ -43,7 +43,7 @@ export default function PortfolioDonut({ allocation }: Props) {
           outerRadius={100}
           dataKey="value"
           label={({ cx, cy }) => (
-            <text x={cx} y={cy} textAnchor="middle" dominantBaseline="central" className="text-sm font-bold fill-gray-700">
+            <text x={cx} y={cy} textAnchor="middle" dominantBaseline="central" style={{ fill: 'var(--text-base)', fontSize: 14, fontWeight: 700 }}>
               100%
             </text>
           )}
@@ -55,12 +55,12 @@ export default function PortfolioDonut({ allocation }: Props) {
         </Pie>
         <Tooltip
           formatter={(value) => [`${value}%`, '']}
-          contentStyle={{ borderRadius: 12, border: '1px solid #e5e7eb', fontSize: 13 }}
+          contentStyle={{ borderRadius: 12, border: '1px solid var(--border)', background: 'var(--surface-raised)', color: 'var(--text-base)', fontSize: 13 }}
         />
         <Legend
           iconType="circle"
           iconSize={8}
-          wrapperStyle={{ fontSize: 12, paddingTop: 8 }}
+          wrapperStyle={{ fontSize: 12, paddingTop: 8, color: 'var(--text-muted)' }}
         />
       </PieChart>
     </ResponsiveContainer>

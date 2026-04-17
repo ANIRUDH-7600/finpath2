@@ -15,14 +15,14 @@ interface Props {
 }
 
 const COLORS = [
-  '#7c3aed',
+  '#02FF9D',
   '#3b82f6',
   '#f97316',
   '#ec4899',
   '#f59e0b',
-  '#22c55e',
+  '#a855f7',
   '#14b8a6',
-  '#94a3b8',
+  '#888888',
 ]
 
 export default function SpendingPie({ data }: Props) {
@@ -30,7 +30,7 @@ export default function SpendingPie({ data }: Props) {
 
   if (filtered.length === 0) {
     return (
-      <div className="flex items-center justify-center h-72 text-gray-400 text-sm">
+      <div className="flex items-center justify-center h-72 text-text-faint text-sm">
         Not enough data
       </div>
     )
@@ -53,12 +53,12 @@ export default function SpendingPie({ data }: Props) {
         </Pie>
         <Tooltip
           formatter={(value) => [formatINR(Number(value)), '']}
-          contentStyle={{ borderRadius: 12, border: '1px solid #e5e7eb', fontSize: 13 }}
+          contentStyle={{ borderRadius: 12, border: '1px solid var(--border)', background: 'var(--surface-raised)', color: 'var(--text-base)', fontSize: 13 }}
         />
         <Legend
           iconType="circle"
           iconSize={8}
-          wrapperStyle={{ fontSize: 12, paddingTop: 8 }}
+          wrapperStyle={{ fontSize: 12, paddingTop: 8, color: 'var(--text-muted)' }}
         />
       </PieChart>
     </ResponsiveContainer>

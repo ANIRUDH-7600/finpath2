@@ -23,11 +23,11 @@ const RISK_QUESTIONS = [
   },
 ]
 
-const ASSET_COLORS: Record<string, string> = {
-  equity: 'bg-purple-100 text-purple-700 border-purple-200',
-  debt: 'bg-green-100 text-green-700 border-green-200',
-  gold: 'bg-amber-100 text-amber-700 border-amber-200',
-  cash: 'bg-gray-100 text-gray-700 border-gray-200',
+const ASSET_BADGE: Record<string, string> = {
+  equity: 'bg-brand-muted text-brand border border-brand/20',
+  debt: 'bg-blue-500/10 text-blue-400 border border-blue-500/20',
+  gold: 'bg-amber-500/10 text-amber-400 border border-amber-500/20',
+  cash: 'bg-border text-text-muted border border-border',
 }
 
 export default function PortfolioPage() {
@@ -43,15 +43,15 @@ export default function PortfolioPage() {
 
   useEffect(() => {
     const stored = localStorage.getItem('finpath_user')
-    if (!stored) { router.replace('/'); return }
+    if (!stored) { router.replace('/auth/signin'); return }
     const u = JSON.parse(stored) as User
     setUserId(u.id)
     setIncome(u.monthly_income)
     setRiskScore(u.risk_appetite ?? 3)
 
-    const cachedPortfolio = localStorage.getItem('finpath_portfolio')
-    if (cachedPortfolio) {
-      setPortfolio(JSON.parse(cachedPortfolio))
+    const cached = localStorage.getItem('finpath_portfolio')
+    if (cached) {
+      setPortfolio(JSON.parse(cached))
       setLoading(false)
     } else {
       setShowQuiz(true)
@@ -89,7 +89,7 @@ export default function PortfolioPage() {
   if (loading) {
     return (
       <div className="p-6 md:p-8 space-y-4">
-        {[...Array(3)].map((_, i) => <div key={i} className="animate-pulse bg-gray-100 rounded-2xl h-32" />)}
+        {[...Array(3)].map((_, i) => <div key={i} className="animate-pulse bg-surface-raised rounded-2xl h-32 border border-border" />)}
       </div>
     )
   }
@@ -97,13 +97,13 @@ export default function PortfolioPage() {
   if (showQuiz || !portfolio) {
     return (
       <div className="p-6 md:p-8 max-w-lg">
-        <h1 className="text-2xl font-semibold text-gray-900 mb-2">Your Investment Profile</h1>
-        <p className="text-sm text-gray-500 mb-6">Answer 3 quick questions to get your personalized portfolio</p>
+        <h1 className="text-2xl font-bold text-text-base mb-1">Investment Profile</h1>
+        <p className="text-sm text-text-muted mb-6">3 quick questions to get your personalized portfolio</p>
 
         <div className="space-y-5">
           {RISK_QUESTIONS.map((q, qi) => (
-            <div key={qi} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-              <p className="text-sm font-medium text-gray-700 mb-3">{q.question}</p>
+            <div key={qi} className="bg-surface-raised border border-border rounded-2xl p-5">
+              <p className="text-sm font-medium text-text-base mb-3">{q.question}</p>
               <div className="space-y-2">
                 {q.options.map((opt) => {
                   const selected = answers[qi] === opt.score
@@ -111,7 +111,7 @@ export default function PortfolioPage() {
                     <button
                       key={opt.score}
                       onClick={() => { const a = [...answers]; a[qi] = opt.score; setAnswers(a) }}
-                      className={`w-full text-left px-4 py-2.5 rounded-xl text-sm border transition-colors ${selected ? 'border-purple-500 bg-purple-50 text-purple-700 font-medium' : 'border-gray-200 text-gray-600 hover:border-purple-200'}`}
+                      className={`w-full text-left px-4 py-2.5 rounded-xl text-sm border transition-colors ${selected ? 'border-brand bg-brand-muted text-brand font-medium' : 'border-border text-text-muted hover:border-brand/30 hover:text-text-base'}`}
                     >
                       {opt.label}
                     </button>
@@ -124,7 +124,7 @@ export default function PortfolioPage() {
           <button
             onClick={handleQuizSubmit}
             disabled={answers.length < 3 || generating}
-            className="w-full bg-purple-600 hover:bg-purple-700 text-white rounded-xl px-6 py-2.5 text-sm font-medium transition-colors disabled:opacity-40 flex items-center justify-center gap-2"
+            className="w-full bg-brand hover:bg-brand-dim text-[#0A0A0A] font-bold rounded-xl py-3 text-sm flex items-center justify-center gap-2 disabled:opacity-40"
           >
             {generating && <Loader2 size={16} className="animate-spin" />}
             {generating ? 'Building portfolio...' : 'Get My Portfolio →'}
@@ -140,61 +140,54 @@ export default function PortfolioPage() {
     <div className="p-6 md:p-8">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Your Portfolio</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Risk score: {riskScore}/5</p>
+          <h1 className="text-2xl font-bold text-text-base">Portfolio Management</h1>
+          <p className="text-sm text-text-muted mt-0.5">Risk score: {riskScore}/5 · AI-optimized for Indian markets</p>
         </div>
         <button
           onClick={() => { setShowQuiz(true); setAnswers([]) }}
-          className="flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+          className="flex items-center gap-2 bg-surface-raised border border-border rounded-xl px-4 py-2 text-sm text-text-muted hover:text-text-base hover:border-brand/30 transition-all"
         >
           <RefreshCw size={14} />
           Recalculate
         </button>
       </div>
 
-      {/* Donut + SIP */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-5 text-center">
+      <div className="bg-surface-raised border border-border rounded-2xl p-6 mb-4 text-center">
         <PortfolioDonut allocation={portfolio.allocation} />
-        <div className="flex items-center justify-center gap-2 mt-2">
-          <TrendingUp size={18} className="text-purple-600" />
-          <p className="text-lg font-bold text-gray-900">
-            Invest <span className="text-purple-600">{formatINR(portfolio.sip_amount)}/month</span> via SIP
+        <div className="flex items-center justify-center gap-2 mt-3">
+          <TrendingUp size={18} className="text-brand" />
+          <p className="text-lg font-bold text-text-base">
+            Invest <span className="text-brand">{formatINR(portfolio.sip_amount)}/month</span> via SIP
           </p>
         </div>
       </div>
 
-      {/* Reasoning */}
-      <div className="bg-blue-50 rounded-2xl border border-blue-100 p-5 mb-4">
+      <div className="bg-blue-500/5 border border-blue-500/20 rounded-2xl p-5 mb-4">
         <div className="flex items-center gap-2 mb-2">
-          <Info size={15} className="text-blue-500" />
-          <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide">Analysis</p>
+          <Info size={14} className="text-blue-400" />
+          <p className="text-xs font-semibold text-blue-400 uppercase tracking-wide">AI Analysis</p>
         </div>
-        <p className="text-sm text-blue-800 leading-relaxed">{portfolio.reasoning}</p>
+        <p className="text-sm text-text-muted leading-relaxed">{portfolio.reasoning}</p>
       </div>
 
-      <div className="bg-amber-50 rounded-2xl border border-amber-100 p-4 mb-5">
-        <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide mb-1">Market Note</p>
-        <p className="text-sm text-amber-800">{portfolio.macro_note}</p>
+      <div className="bg-amber-500/5 border border-amber-500/20 rounded-2xl p-4 mb-5">
+        <p className="text-xs font-semibold text-amber-400 uppercase tracking-wide mb-1">Market Note</p>
+        <p className="text-sm text-text-muted">{portfolio.macro_note}</p>
       </div>
 
-      {/* Instrument cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
         {assetClasses.filter(([, v]) => v > 0).map(([asset, pct]) => {
-          const colorClass = ASSET_COLORS[asset] ?? 'bg-gray-100 text-gray-700 border-gray-200'
+          const badgeClass = ASSET_BADGE[asset] ?? 'bg-border text-text-muted border border-border'
           const funds = portfolio.instruments?.[asset] ?? []
           return (
-            <div key={asset} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+            <div key={asset} className="bg-surface-raised border border-border rounded-2xl p-5">
               <div className="flex items-center justify-between mb-3">
-                <p className="text-sm font-semibold text-gray-800 capitalize">{asset}</p>
-                <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${colorClass}`}>
-                  {pct}%
-                </span>
+                <p className="text-sm font-semibold text-text-base capitalize">{asset}</p>
+                <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${badgeClass}`}>{pct}%</span>
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {funds.map((fund: string, i: number) => (
-                  <span key={i} className={`text-xs px-2 py-1 rounded-lg border ${colorClass}`}>
-                    {fund}
-                  </span>
+                  <span key={i} className={`text-xs px-2 py-1 rounded-lg ${badgeClass}`}>{fund}</span>
                 ))}
               </div>
             </div>
@@ -202,7 +195,7 @@ export default function PortfolioPage() {
         })}
       </div>
 
-      <p className="text-xs text-gray-400 text-center">
+      <p className="text-xs text-text-faint text-center">
         Not financial advice. Consult a SEBI registered investment advisor before investing.
       </p>
     </div>

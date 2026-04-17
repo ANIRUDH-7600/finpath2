@@ -11,7 +11,7 @@ interface Props {
 export default function GoalProgress({ goals }: Props) {
   if (goals.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-8 text-gray-400">
+      <div className="flex flex-col items-center justify-center py-8 text-text-faint">
         <p className="text-sm">No goals yet</p>
         <p className="text-xs mt-1">Create your first goal to track progress</p>
       </div>
@@ -25,18 +25,18 @@ export default function GoalProgress({ goals }: Props) {
         return (
           <div key={goal.id}>
             <div className="flex justify-between items-baseline mb-1.5">
-              <span className="text-sm font-medium text-gray-800">{goal.title}</span>
-              <span className="text-xs text-gray-400">{pct}%</span>
+              <span className="text-sm font-medium text-text-base">{goal.title}</span>
+              <span className="text-xs text-text-faint">{pct}%</span>
             </div>
-            <div className="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
+            <div className="w-full bg-border rounded-full h-2 overflow-hidden">
               <div
-                className="bg-purple-500 h-2.5 rounded-full transition-all duration-1000 ease-out"
-                style={{ width: `${pct}%` }}
+                className="h-2 rounded-full transition-all duration-1000 ease-out"
+                style={{ width: `${pct}%`, background: '#02FF9D' }}
               />
             </div>
             <div className="flex justify-between mt-1">
-              <span className="text-xs text-gray-400">{formatINR(goal.current_savings)}</span>
-              <span className="text-xs text-gray-400">{formatINR(goal.target_amount)}</span>
+              <span className="text-xs text-text-faint">{formatINR(goal.current_savings)}</span>
+              <span className="text-xs text-text-faint">{formatINR(goal.target_amount)}</span>
             </div>
           </div>
         )

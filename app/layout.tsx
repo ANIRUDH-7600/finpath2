@@ -9,8 +9,8 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'FinPath — Your Personal CFO',
-  description: 'AI-powered personal finance for Indian users',
+  title: 'FinPath — AI Personal Finance',
+  description: 'AI-powered personal finance for ambitious Indians',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

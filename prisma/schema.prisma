@@ -1,0 +1,94 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id                  String             @id @default(uuid()) @db.Uuid
+  name                String
+  email               String?            @unique
+  monthly_income      Float              @default(0)
+  risk_appetite       Int                @default(3)
+  phone               String?
+  password_hash       String?
+  avatar_url          String?
+  auth_provider       String             @default("credentials")
+  google_id           String?            @unique
+  onboarding_complete Boolean            @default(false)
+  created_at          DateTime           @default(now())
+
+  transactions        Transaction[]
+  goals               Goal[]
+  portfolio_profiles  PortfolioProfile[]
+  nudge_logs          NudgeLog[]
+
+  @@map("users")
+}
+
+model Transaction {
+  id         String   @id @default(uuid()) @db.Uuid
+  user_id    String   @db.Uuid
+  amount     Float
+  merchant   String
+  category   String
+  date       DateTime @db.Date
+  note       String   @default("")
+  created_at DateTime @default(now())
+
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("transactions")
+}
+
+model Goal {
+  id                  String   @id @default(uuid()) @db.Uuid
+  user_id             String   @db.Uuid
+  title               String
+  target_amount       Float
+  current_savings     Float    @default(0)
+  deadline_months     Int
+  daily_save_required Float?
+  narrative           String?
+  status              String   @default("active")
+  created_at          DateTime @default(now())
+
+  user                User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("goals")
+}
+
+model PortfolioProfile {
+  id          String   @id @default(uuid()) @db.Uuid
+  user_id     String   @unique @db.Uuid
+  risk_score  Int?
+  allocation  Json?
+  instruments Json?
+  sip_amount  Float?
+  reasoning   String?
+  macro_note  String?
+  created_at  DateTime @default(now())
+
+  user        User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("portfolio_profiles")
+}
+
+model NudgeLog {
+  id            String   @id @default(uuid()) @db.Uuid
+  user_id       String   @db.Uuid
+  merchant      String?
+  amount        Float?
+  category      String?
+  nudge_message String?
+  user_action   String?
+  created_at    DateTime @default(now())
+
+  user          User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("nudge_log")
+}
