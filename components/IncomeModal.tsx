@@ -53,7 +53,7 @@ export function IncomeSetupModal({ isOpen, userId, onComplete }: IncomeSetupModa
   if (step === 'income') {
     return (
       <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-        <div className="bg-surface-raised border border-border rounded-2xl p-8 max-w-md w-full mx-4">
+        <div className="bg-surface-raised border border-border rounded-xl p-8 max-w-md w-full mx-4">
           <div className="text-center mb-6">
             <div className="bg-brand-muted rounded-full p-3 w-fit mx-auto mb-4">
               <DollarSign size={28} className="text-brand" />
@@ -119,7 +119,7 @@ export function IncomeSetupModal({ isOpen, userId, onComplete }: IncomeSetupModa
 
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-      <div className="bg-surface-raised border border-border rounded-2xl p-8 max-w-md w-full mx-4">
+      <div className="bg-surface-raised border border-border rounded-xl p-8 max-w-md w-full mx-4">
         <div className="text-center mb-6">
           <div className="bg-brand-muted rounded-full p-3 w-fit mx-auto mb-4">
             <Target size={28} className="text-brand" />

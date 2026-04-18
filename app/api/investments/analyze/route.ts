@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { claude } from '@/lib/claude'
+import { claude, CLAUDE_MODEL } from '@/lib/claude'
 
 interface WatchlistItem {
   id: string
@@ -8,18 +8,21 @@ interface WatchlistItem {
   returns: number
 }
 
+interface MarketContext {
+  nifty_pe?: number
+  nifty_current?: number
+  repo_rate?: number
+  inflation?: number
+  sentiment?: string
+}
+
 const FALLBACK = {
-  analysis: `Your watchlist shows a mix of instruments. For a balanced Indian portfolio, consider:
-- Large cap stocks provide stability with moderate growth (8-15% expected)
-- Flexi cap mutual funds offer diversification with inflation-beating returns
-- Gold ETFs (5-10% allocation) hedge against rupee depreciation
-- Maintain 3-6 months emergency fund before investing aggressively
-Review your risk tolerance and investment horizon before committing capital.`,
+  analysis: `Your watchlist shows a mix of Indian instruments. For a balanced portfolio consider: large cap stability through index funds, flexi cap for dynamic allocation, and 5-10% gold for rupee hedging. Maintain a 3-6 month emergency fund before investing aggressively. Review your risk tolerance before committing capital.`,
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const { watchlist } = (await req.json()) as { watchlist: WatchlistItem[] }
+    const { watchlist, market } = (await req.json()) as { watchlist: WatchlistItem[]; market?: MarketContext }
 
     if (!watchlist?.length) {
       return NextResponse.json({ error: 'Empty watchlist' }, { status: 400 })
@@ -29,17 +32,22 @@ export async function POST(req: NextRequest) {
       .map((item) => `${item.name} (${item.type.toUpperCase()}, ${item.returns >= 0 ? '+' : ''}${item.returns}% returns)`)
       .join(', ')
 
+    const marketContext = market
+      ? `\nLIVE MARKET: Nifty ${market.nifty_current?.toLocaleString('en-IN')} | PE ${market.nifty_pe} | Repo ${market.repo_rate}% | CPI ${market.inflation}% | Sentiment: ${market.sentiment}`
+      : ''
+
     const response = await claude.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 400,
+      model: CLAUDE_MODEL,
+      max_tokens: 350,
       messages: [
         {
           role: 'user',
-          content: `Analyze this Indian investment watchlist and give 3-4 concise, actionable insights. Be specific about Indian market context, risks, and if the portfolio is diversified.
+          content: `You are a SEBI-aligned Indian investment advisor. Analyze this watchlist and give 3-4 sharp, specific insights. Reference actual returns, current market PE, and Indian market context. No generic advice.
+${marketContext}
 
 Watchlist: ${portfolioSummary}
 
-Return ONLY plain text insights, no markdown, no headers. Max 150 words.`,
+Return plain text only, no markdown, no bullet symbols. Max 120 words. Be direct and specific.`,
         },
       ],
     })

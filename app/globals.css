@@ -1,60 +1,128 @@
 @import "tailwindcss";
 
+/* ─── Satoshi ─────────────────────────────────────────────── */
+@font-face {
+  font-family: 'Satoshi';
+  src: url('/fonts/satoshi.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --font-sans: Inter, system-ui, -apple-system, sans-serif;
+  --font-sans: 'Satoshi', system-ui, -apple-system, sans-serif;
 
-  --color-brand: #02FF9D;
-  --color-brand-dim: #01D97F;
-  --color-brand-muted: rgba(2, 255, 157, 0.12);
+  --color-brand:       #02FF9D;
+  --color-brand-dim:   #01D97F;
+  --color-brand-muted: rgba(2, 255, 157, 0.1);
 
-  --color-surface: var(--surface);
+  --color-surface:        var(--surface);
   --color-surface-raised: var(--surface-raised);
-  --color-border: var(--border);
-  --color-text-base: var(--text-base);
-  --color-text-muted: var(--text-muted);
-  --color-text-faint: var(--text-faint);
+  --color-border:         var(--border);
+  --color-text-base:      var(--text-base);
+  --color-text-muted:     var(--text-muted);
+  --color-text-faint:     var(--text-faint);
 }
 
-/* ─── Light Mode ──────────────────────────────────────────── */
+/* ─── Light ───────────────────────────────────────────────── */
 :root {
-  --surface: #FFFFFF;
-  --surface-raised: #F5F5F5;
-  --border: #E5E5E5;
-  --text-base: #0A0A0A;
-  --text-muted: #555555;
-  --text-faint: #999999;
+  --surface:        #FAFAFA;
+  --surface-raised: #FFFFFF;
+  --border:         #EBEBEB;
+  --text-base:      #0A0A0A;
+  --text-muted:     #666666;
+  --text-faint:     #AAAAAA;
 }
 
-/* ─── Dark Mode ───────────────────────────────────────────── */
+/* ─── Dark ────────────────────────────────────────────────── */
 .dark {
-  --surface: #0A0A0A;
-  --surface-raised: #111111;
-  --border: #2A2A2A;
-  --text-base: #FFFFFF;
-  --text-muted: #888888;
-  --text-faint: #444444;
+  --surface:        #070708;
+  --surface-raised: #0F0F11;
+  --border:         rgba(255, 255, 255, 0.07);
+  --text-base:      #EFEFEF;
+  --text-muted:     rgba(239, 239, 239, 0.45);
+  --text-faint:     rgba(239, 239, 239, 0.2);
 }
 
 /* ─── Base ────────────────────────────────────────────────── */
-html {
-  background: var(--surface);
-  color: var(--text-base);
-}
+html { background: var(--surface); color: var(--text-base); }
 
 body {
-  font-family: var(--font-sans);
+  font-family: 'Satoshi', system-ui, sans-serif;
+  font-size: 15px;
   background: var(--surface);
   color: var(--text-base);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;
+  letter-spacing: -0.01em;
 }
 
-/* ─── Scrollbar ───────────────────────────────────────────── */
-::-webkit-scrollbar { width: 5px; height: 5px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+/* Subtle noise in dark mode — same as landing */
+.dark body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+  opacity: 0.025;
+  pointer-events: none;
+  z-index: 9999;
+}
 
-/* ─── Slider accent ──────────────────────────────────────── */
+/* ─── Typography scale ────────────────────────────────────── */
+h1 { letter-spacing: -0.03em; font-weight: 700; line-height: 1.1; }
+h2 { letter-spacing: -0.025em; font-weight: 700; line-height: 1.2; }
+h3 { letter-spacing: -0.02em; font-weight: 600; }
+
+/* Tabular numbers for financial data */
+.num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+  letter-spacing: -0.02em;
+}
+
+/* ─── Inputs ──────────────────────────────────────────────── */
+input, select, textarea { font-family: inherit; letter-spacing: inherit; }
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(2, 255, 157, 0.18);
+}
+
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
+
 input[type="range"] { accent-color: #02FF9D; }
+
+/* ─── Scrollbar ───────────────────────────────────────────── */
+::-webkit-scrollbar       { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+/* ─── Card tokens ─────────────────────────────────────────── */
+.card {
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+
+/* ─── Skeleton shimmer ────────────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position:  400px 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, var(--surface-raised) 25%, var(--border) 50%, var(--surface-raised) 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.4s ease infinite;
+  border-radius: 8px;
+}
+
+/* ─── Page entrance ───────────────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.page-enter { animation: fadeUp 0.3s ease forwards; }

@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useSession } from 'next-auth/react'
-import { Shield, Zap, Plus, FileDown, TrendingUp, Target, Globe, Loader2, Receipt, DollarSign } from 'lucide-react'
+import { Zap, Plus, FileDown, TrendingUp, Target, Globe, Loader2, Receipt, DollarSign } from 'lucide-react'
 import toast from 'react-hot-toast'
 import HealthScore from '@/components/HealthScore'
 import LeakageCard from '@/components/LeakageCard'
@@ -12,7 +12,6 @@ import GoalCard from '@/components/GoalCard'
 import TransactionRow from '@/components/TransactionRow'
 import AddExpenseDrawer from '@/components/AddExpenseDrawer'
 import SpendingPie from '@/components/charts/SpendingPie'
-import PortfolioDonut from '@/components/charts/PortfolioDonut'
 import { IncomeSetupModal } from '@/components/IncomeModal'
 import { formatINR } from '@/lib/utils/formatCurrency'
 import type { DashboardData, MacroInsight, TransactionCategory } from '@/types'
@@ -22,7 +21,7 @@ const CATEGORIES: TransactionCategory[] = [
   'Shopping', 'Utilities', 'Healthcare', 'Other',
 ]
 
-const inputClass = "w-full bg-[#1C1C1C] border border-border rounded-xl px-4 py-3 text-sm text-text-base placeholder:text-text-faint focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition"
+const inputClass = "w-full bg-surface border border-border rounded-xl px-4 py-3 text-sm text-text-base placeholder:text-text-faint focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition"
 
 export default function DashboardPage() {
   const { data: session, status } = useSession()
@@ -133,7 +132,7 @@ export default function DashboardPage() {
     return (
       <div className="p-6 md:p-8 space-y-4">
         {[...Array(4)].map((_, i) => (
-          <div key={i} className="animate-pulse bg-surface-raised rounded-2xl h-32 border border-border" />
+          <div key={i} className="animate-pulse bg-surface-raised rounded-xl h-32 border border-border" />
         ))}
       </div>
     )
@@ -146,14 +145,14 @@ export default function DashboardPage() {
     return (
       <div className="p-6 md:p-8">
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-text-base">
+          <h1 className="text-3xl font-bold text-text-base">
             {greeting}, {session?.user?.name?.split(' ')[0] ?? 'there'}
           </h1>
           <p className="text-sm text-text-muted mt-0.5">Your AI Personal CFO is ready — let&apos;s get your data in</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-surface-raised border border-brand/20 rounded-2xl p-6">
+          <div className="bg-surface-raised border border-brand/20 rounded-xl p-6">
             <h2 className="text-base font-bold text-text-base mb-1">Add your first expense</h2>
             <p className="text-xs text-text-muted mb-5">Once you add a few expenses, the AI will activate and analyze your patterns.</p>
             <form onSubmit={handleAddFirstExpense} className="space-y-3">
@@ -187,21 +186,21 @@ export default function DashboardPage() {
             </form>
           </div>
 
-          <div className="bg-surface-raised border border-border rounded-2xl p-6">
+          <div className="bg-surface-raised border border-border rounded-xl p-6">
             <h2 className="text-base font-bold text-text-base mb-1">Or import your bank statement</h2>
             <p className="text-xs text-text-muted mb-5">Upload a CSV or UPI PDF to instantly load months of transaction history.</p>
             <div className="space-y-3">
               <Link href="/transactions?tab=import" className="flex items-center gap-3 bg-surface border border-border rounded-xl p-4 hover:border-brand/30 transition-all">
                 <Receipt size={18} className="text-brand" />
                 <div>
-                  <p className="text-sm font-semibold text-text-base">Import Bank CSV / UPI PDF</p>
+                  <p className="text-base font-semibold text-text-base">Import Bank CSV / UPI PDF</p>
                   <p className="text-xs text-text-muted">HDFC, SBI, Axis · PhonePe, GPay</p>
                 </div>
               </Link>
               <Link href="/transactions" className="flex items-center gap-3 bg-surface border border-border rounded-xl p-4 hover:border-brand/30 transition-all">
                 <Plus size={18} className="text-text-muted" />
                 <div>
-                  <p className="text-sm font-semibold text-text-base">Add multiple expenses manually</p>
+                  <p className="text-base font-semibold text-text-base">Add multiple expenses manually</p>
                   <p className="text-xs text-text-muted">Use the full transactions page</p>
                 </div>
               </Link>
@@ -231,9 +230,16 @@ export default function DashboardPage() {
 
   const monthlyIncome = data?.user.monthly_income ?? 0
   const monthlySpending = data?.analysis.monthly_total ?? 0
-  const monthlySavings = data?.savings ?? Math.max(0, monthlyIncome - monthlySpending)
+  const emiMonthly = data?.emi_monthly ?? 0
+  const sipMonthly = data?.sip_monthly ?? 0
+  const sipPortfolioValue = data?.sip_portfolio_value ?? 0
+  const sipTotalInvested = data?.sip_total_invested ?? 0
+  const sipGainLoss = data?.sip_gain_loss ?? 0
+  const monthlySavings = data?.savings ?? Math.max(0, monthlyIncome - monthlySpending - emiMonthly)
+  const netCash = data?.net_cash ?? Math.max(0, monthlySavings - sipMonthly)
   const savingsRate = data?.analysis.savings_rate ?? (monthlyIncome > 0 ? (monthlySavings / monthlyIncome) * 100 : 0)
   const incomeUsedPct = monthlyIncome > 0 ? Math.min(100, Math.round((monthlySpending / monthlyIncome) * 100)) : 0
+  const hasEmiOrSip = emiMonthly > 0 || sipMonthly > 0
 
   const activeGoalId = data?.goals?.[0]?.id ?? ''
 
@@ -262,142 +268,242 @@ export default function DashboardPage() {
 
       <div className="flex items-start justify-between mb-7">
         <div>
-          <h1 className="text-2xl font-bold text-text-base">
+          <h1 className="text-3xl font-bold text-text-base">
             {greeting}, {data?.user.name?.split(' ')[0] ?? session?.user?.name?.split(' ')[0]}
           </h1>
           <p className="text-sm text-text-muted mt-0.5">Here&apos;s your financial snapshot</p>
         </div>
-        <button onClick={handleExportPDF} className="flex items-center gap-2 bg-surface-raised border border-border rounded-xl px-4 py-2 text-sm text-text-muted hover:text-text-base hover:border-brand/30 transition-all">
-          <FileDown size={14} />
+        <button onClick={handleExportPDF} className="flex items-center gap-2 bg-surface-raised border border-border rounded-lg px-3.5 py-2 text-[12px] text-text-muted hover:text-text-base hover:border-brand/30 transition-all">
+          <FileDown size={13} />
           Export PDF
         </button>
       </div>
 
       {/* Row 1 — Key metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-5">
-        <div className="bg-surface-raised border border-border rounded-2xl p-5 flex flex-col items-center justify-center">
-          <p className="text-xs font-semibold text-text-faint uppercase tracking-wider mb-3">Financial Health</p>
-          <HealthScore score={data?.analysis.health_score ?? 50} label={data?.analysis.health_label ?? 'Average'} />
-        </div>
-
-        <div className="bg-surface-raised border border-border rounded-2xl p-5">
-          <p className="text-xs font-semibold text-text-faint uppercase tracking-wider mb-2">Monthly Income</p>
-          <p className="text-3xl font-bold text-text-base">{formatINR(monthlyIncome)}</p>
-          <button 
-            onClick={() => setShowIncomeModal(true)}
-            className="text-xs text-brand hover:underline mt-1 block"
-          >
-            Update income →
-          </button>
-        </div>
-
-        <div className="bg-surface-raised border border-border rounded-2xl p-5">
-          <p className="text-xs font-semibold text-text-faint uppercase tracking-wider mb-2">Monthly Spend</p>
-          <p className="text-3xl font-bold text-text-base">{formatINR(monthlySpending)}</p>
-          <p className="text-xs text-text-muted mt-1">
-            {incomeUsedPct}% of income · {Object.keys(data?.analysis.categories ?? {}).length} categories
-          </p>
-          <div className="mt-3 w-full bg-border rounded-full h-1.5 overflow-hidden">
-            <div
-              className="h-full rounded-full transition-all"
-              style={{
-                width: `${incomeUsedPct}%`,
-                background: incomeUsedPct > 80 ? '#ef4444' : incomeUsedPct > 60 ? '#f59e0b' : '#02FF9D',
-              }}
-            />
+      <div className="bg-surface-raised border border-border rounded-xl mb-5 overflow-hidden">
+        <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-border">
+          <div className="p-5 flex flex-col items-center justify-center">
+            <p className="text-[11px] font-bold text-text-muted uppercase tracking-widest mb-3">Health Score</p>
+            <HealthScore score={data?.analysis.health_score ?? 50} label={data?.analysis.health_label ?? 'Average'} />
           </div>
-        </div>
 
-        <div className="bg-surface-raised border border-border rounded-2xl p-5">
-          <div className="flex items-center justify-between mb-1">
-            <p className="text-xs font-semibold text-text-faint uppercase tracking-wider">Monthly Savings</p>
-            <DollarSign size={14} className="text-brand" />
+          <div className="p-5">
+            <p className="text-[11px] font-bold text-text-muted uppercase tracking-widest mb-2">Income</p>
+            <p className="text-3xl font-bold text-text-base num">{formatINR(monthlyIncome)}</p>
+            <button onClick={() => setShowIncomeModal(true)} className="text-[11px] text-brand hover:underline mt-1.5 block">
+              Update →
+            </button>
           </div>
-          <p className="text-3xl font-bold text-brand">{formatINR(monthlySavings)}</p>
-          <p className="text-xs text-text-muted mt-1">
-            {savingsRate.toFixed(1)}% savings rate
-          </p>
-          <div className="mt-3 w-full bg-border rounded-full h-1.5 overflow-hidden">
-            <div
-              className="h-full rounded-full bg-brand transition-all"
-              style={{ width: `${Math.min(100, savingsRate)}%` }}
-            />
+
+          <div className="p-5">
+            <p className="text-[11px] font-bold text-text-muted uppercase tracking-widest mb-2">Spending</p>
+            <p className="text-3xl font-bold text-text-base num">{formatINR(monthlySpending)}</p>
+            <p className="text-[11px] text-text-faint mt-1">{incomeUsedPct}% of income</p>
+            <div className="mt-2.5 w-full bg-border rounded-full h-1 overflow-hidden">
+              <div className="h-full rounded-full transition-all" style={{ width: `${incomeUsedPct}%`, background: incomeUsedPct > 80 ? '#ef4444' : incomeUsedPct > 60 ? '#f59e0b' : '#02FF9D' }} />
+            </div>
           </div>
-          <p className="text-xs text-text-faint mt-2">{getSavingsInsight()}</p>
+
+          <div className="p-5">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-[11px] font-bold text-text-muted uppercase tracking-widest">Saved</p>
+              <DollarSign size={13} className="text-brand" />
+            </div>
+            <p className="text-3xl font-bold text-brand num">{formatINR(monthlySavings)}</p>
+            <p className="text-[11px] text-text-faint mt-1">{savingsRate.toFixed(1)}% rate</p>
+            <div className="mt-2.5 w-full bg-border rounded-full h-1 overflow-hidden">
+              <div className="h-full rounded-full bg-brand transition-all" style={{ width: `${Math.min(100, savingsRate)}%` }} />
+            </div>
+            {emiMonthly > 0 && <p className="text-[10px] text-orange-400 mt-1.5">–{formatINR(emiMonthly)} EMI</p>}
+          </div>
         </div>
       </div>
 
-      {/* Row 2 — Macro insight */}
-      {macro && (
-        <div className="bg-surface-raised border border-border rounded-2xl p-5 mb-5">
+      {/* Money Flow Strip */}
+      {hasEmiOrSip && (
+        <div className="bg-surface-raised border border-border rounded-xl p-4 mb-5">
           <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <Globe size={15} className="text-text-muted" />
-              <p className="text-sm font-semibold text-text-base">Market Intelligence</p>
-            </div>
-            <span className={`text-xs font-bold rounded-full px-2.5 py-0.5 ${
-              macro.sentiment === 'bullish' ? 'bg-brand-muted text-brand' :
-              macro.sentiment === 'cautious' ? 'bg-orange-500/10 text-orange-400' :
-              'bg-border text-text-muted'
-            }`}>
-              {macro.sentiment.toUpperCase()}
-            </span>
+            <p className="text-[11px] font-bold text-text-muted uppercase tracking-widest">Income Allocation</p>
+            <Link href="/cashflow" className="text-xs text-brand hover:underline">Manage →</Link>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <p className="text-[10px] text-text-faint uppercase font-semibold mb-1">Market Outlook</p>
-              <p className="text-xs text-text-muted leading-relaxed">{macro.market_outlook}</p>
-            </div>
-            <div>
-              <p className="text-[10px] text-text-faint uppercase font-semibold mb-1">RBI / Policy</p>
-              <p className="text-xs text-text-muted leading-relaxed">{macro.rbi_note}</p>
-            </div>
-            <div>
-              <p className="text-[10px] text-text-faint uppercase font-semibold mb-1">Your Action</p>
-              <p className="text-xs text-brand font-medium leading-relaxed">{macro.action_tip}</p>
-            </div>
+          <div className="flex items-center gap-1 h-5 rounded-full overflow-hidden mb-3">
+            {monthlyIncome > 0 && [
+              { label: 'Expenses', val: monthlySpending, color: 'bg-red-400' },
+              { label: 'EMIs', val: emiMonthly, color: 'bg-orange-400' },
+              { label: 'SIPs', val: sipMonthly, color: 'bg-blue-400' },
+              { label: 'Free', val: Math.max(0, netCash), color: 'bg-brand/70' },
+            ].map(s => s.val > 0 && (
+              <div key={s.label} className={`h-full ${s.color} transition-all`} style={{ width: `${Math.min(100, (s.val / monthlyIncome) * 100)}%` }} title={`${s.label}: ${formatINR(s.val)}`} />
+            ))}
           </div>
+          <div className="grid grid-cols-4 gap-2">
+            {[
+              { label: 'Expenses', val: monthlySpending, color: 'bg-red-400' },
+              { label: 'EMIs', val: emiMonthly, color: 'bg-orange-400' },
+              { label: 'SIPs', val: sipMonthly, color: 'bg-blue-400' },
+              { label: 'Free Cash', val: Math.max(0, netCash), color: 'bg-brand/70' },
+            ].map(s => (
+              <div key={s.label} className="flex items-center gap-1.5">
+                <div className={`w-2 h-2 rounded-full shrink-0 ${s.color}`} />
+                <div>
+                  <p className="text-[10px] text-text-faint">{s.label}</p>
+                  <p className="text-xs font-bold text-text-base">{formatINR(s.val)}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+          {sipPortfolioValue > 0 && (
+            <div className="mt-3 pt-3 border-t border-border">
+              <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center gap-2">
+                  <TrendingUp size={12} className="text-blue-400" />
+                  <p className="text-xs text-text-faint">SIP Portfolio Value</p>
+                </div>
+                <p className="text-sm font-bold text-blue-400">{formatINR(sipPortfolioValue)}</p>
+              </div>
+              {sipTotalInvested > 0 && (
+                <div className="flex items-center justify-between">
+                  <p className="text-[10px] text-text-faint">Invested: {formatINR(sipTotalInvested)}</p>
+                  <p className={`text-[10px] font-semibold ${sipGainLoss >= 0 ? 'text-brand' : 'text-red-400'}`}>
+                    {sipGainLoss >= 0 ? '+' : ''}{formatINR(sipGainLoss)} ({sipTotalInvested > 0 ? ((sipGainLoss / sipTotalInvested) * 100).toFixed(1) : '0'}%)
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
-      {/* Row 3 — Spending + AI Insight */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-5">
-        <div className="md:col-span-3 bg-surface-raised border border-border rounded-2xl p-5">
-          <p className="text-sm font-semibold text-text-base mb-4">Spending Breakdown</p>
-          <SpendingPie data={pieData} />
+      {/* Row 2 — Live Market + Portfolio */}
+      <div className="bg-surface-raised border border-border rounded-xl p-5 mb-5">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Globe size={14} className="text-text-faint" />
+            <p className="text-base font-semibold text-text-base">Investments</p>
+          </div>
+          <Link href="/portfolio" className="text-xs text-brand hover:underline">Manage →</Link>
         </div>
 
-        <div className="md:col-span-2 space-y-4">
-          <div className="bg-surface-raised border border-border rounded-2xl p-5">
-            <div className="flex items-center gap-2 mb-3">
-              <Zap size={15} className="text-brand" />
-              <p className="text-sm font-semibold text-text-base">AI Insight</p>
-            </div>
-            <p className="text-sm text-text-muted leading-relaxed">{data?.analysis.top_insight}</p>
-          </div>
-
-          {data?.portfolio && (
-            <div className="bg-surface-raised border border-border rounded-2xl p-5">
-              <div className="flex items-center gap-2 mb-3">
-                <TrendingUp size={15} className="text-brand" />
-                <p className="text-sm font-semibold text-text-base">Portfolio</p>
-              </div>
-              <PortfolioDonut allocation={data.portfolio.allocation} />
-              <p className="text-xs text-center text-text-muted mt-2">
-                SIP: <span className="font-bold text-brand">{formatINR(data.portfolio.sip_amount)}/mo</span>
-              </p>
-              <p className="text-xs text-text-faint text-center mt-1">
-                Based on your {formatINR(monthlySavings)} monthly savings
-              </p>
+        {/* Live market ticker */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+          {macro?.nifty_level && (
+            <div className="bg-surface rounded-xl p-3">
+              <p className="text-[10px] text-text-faint uppercase tracking-wider mb-1">Nifty 50</p>
+              <p className="text-lg font-black text-text-base">{macro.nifty_level.toLocaleString('en-IN')}</p>
             </div>
           )}
+          {macro?.nifty_pe && (
+            <div className="bg-surface rounded-xl p-3">
+              <p className="text-[10px] text-text-faint uppercase tracking-wider mb-1">PE Ratio</p>
+              <p className={`text-lg font-black ${macro.nifty_pe > 25 ? 'text-red-400' : macro.nifty_pe < 18 ? 'text-brand' : 'text-yellow-400'}`}>
+                {macro.nifty_pe}
+              </p>
+              <p className="text-[10px] text-text-faint">{macro.nifty_pe > 25 ? 'expensive' : macro.nifty_pe < 18 ? 'cheap' : 'fair value'}</p>
+            </div>
+          )}
+          {macro?.repo_rate && (
+            <div className="bg-surface rounded-xl p-3">
+              <p className="text-[10px] text-text-faint uppercase tracking-wider mb-1">Repo Rate</p>
+              <p className="text-lg font-black text-text-base">{macro.repo_rate}%</p>
+            </div>
+          )}
+          {macro?.inflation && (
+            <div className="bg-surface rounded-xl p-3">
+              <p className="text-[10px] text-text-faint uppercase tracking-wider mb-1">Inflation</p>
+              <p className={`text-lg font-black ${macro.inflation > 6 ? 'text-orange-400' : 'text-text-base'}`}>{macro.inflation}%</p>
+            </div>
+          )}
+          {/* Fallback when no macro numbers yet */}
+          {!macro?.nifty_level && !macro?.nifty_pe && (
+            <div className="col-span-2 sm:col-span-4 flex items-center gap-2 text-xs text-text-faint">
+              <Loader2 size={12} className="animate-spin" />
+              Fetching live market data…
+            </div>
+          )}
+        </div>
+
+        {/* Sentiment + signal */}
+        {macro && (
+          <div className="flex items-center gap-3 mb-5">
+            <span className={`text-xs font-bold rounded-full px-2.5 py-1 ${
+              macro.sentiment === 'bullish' ? 'bg-brand/10 text-brand' :
+              macro.sentiment === 'bearish' ? 'bg-red-500/10 text-red-400' :
+              'bg-yellow-400/10 text-yellow-400'
+            }`}>
+              {macro.sentiment.toUpperCase()}
+            </span>
+            {macro.market_signal && (
+              <p className="text-xs text-text-faint truncate">{macro.market_signal}</p>
+            )}
+          </div>
+        )}
+
+        {/* Portfolio allocation */}
+        {data?.portfolio ? (
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs text-text-faint uppercase tracking-wider">Your Allocation</p>
+              <p className="text-xs font-bold text-brand">SIP {formatINR(data.portfolio.sip_amount)}/mo</p>
+            </div>
+            <div className="space-y-1.5">
+              {Object.entries(data.portfolio.allocation).map(([key, val]) => {
+                const colors: Record<string, string> = { equity: '#02FF9D', debt: '#3B82F6', gold: '#F59E0B', cash: '#6B7280' }
+                const color = colors[key] ?? '#6B7280'
+                return (
+                  <div key={key} className="flex items-center gap-2">
+                    <p className="text-[10px] text-text-faint capitalize w-10 shrink-0">{key}</p>
+                    <div className="flex-1 h-1.5 bg-surface rounded-full overflow-hidden">
+                      <div className="h-full rounded-full" style={{ width: `${val}%`, background: color }} />
+                    </div>
+                    <p className="text-[10px] font-bold text-text-base w-8 text-right">{String(val)}%</p>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        ) : (
+          <Link
+            href="/portfolio"
+            className="flex items-center justify-between bg-brand/5 border border-brand/20 rounded-xl px-4 py-3 hover:border-brand/40 transition-all"
+          >
+            <div>
+              <p className="text-sm font-semibold text-brand">Generate AI Portfolio</p>
+              <p className="text-xs text-text-faint mt-0.5">Based on your risk profile + live market data</p>
+            </div>
+            <TrendingUp size={18} className="text-brand shrink-0" />
+          </Link>
+        )}
+      </div>
+
+      {/* Row 3 — Spending + AI Insight */}
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-5">
+        <div className="md:col-span-3 bg-surface-raised border border-border rounded-xl p-5">
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-base font-semibold text-text-base">Spending Breakdown</p>
+            {(emiMonthly > 0 || sipMonthly > 0) && (
+              <span className="text-[10px] text-text-faint">Expenses only · <Link href="/cashflow" className="text-brand hover:underline">full flow →</Link></span>
+            )}
+          </div>
+          <SpendingPie data={pieData} /></div>
+
+        <div className="md:col-span-2">
+          <div className="bg-surface-raised border border-border rounded-xl p-5">
+            <div className="flex items-center gap-2 mb-3">
+              <Zap size={15} className="text-brand" />
+              <p className="text-base font-semibold text-text-base">AI Insight</p>
+            </div>
+            <p className="text-sm text-text-muted leading-relaxed">{data?.analysis.top_insight}</p>
+            {macro?.action_tip && (
+              <p className="text-xs text-brand mt-3 pt-3 border-t border-border">{macro.action_tip}</p>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Row 4 — Spending Leaks */}
       {(data?.analysis.leakage_patterns.length ?? 0) > 0 && (
         <div className="mb-5">
-          <p className="text-sm font-semibold text-text-base mb-3">Spending Leaks</p>
+          <p className="text-base font-semibold text-text-base mb-3">Spending Leaks</p>
           <div className="flex gap-4 overflow-x-auto pb-2">
             {data?.analysis.leakage_patterns.map((p, i) => (
               <LeakageCard key={i} pattern={p.pattern} amount={p.amount} frequency={p.frequency} suggestion={p.suggestion} />
@@ -412,20 +518,27 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <Target size={15} className="text-brand" />
-              <p className="text-sm font-semibold text-text-base">Goals</p>
+              <p className="text-base font-semibold text-text-base">Goals</p>
             </div>
             <Link href="/goals" className="text-xs text-brand hover:underline">Manage →</Link>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {data?.goals.slice(0, 2).map((g) => <GoalCard key={g.id} goal={g} />)}
+            {data?.goals.slice(0, 2).map((g) => (
+              <GoalCard
+                key={g.id}
+                goal={g}
+                onUpdate={() => {}}
+                onDelete={() => {}}
+              />
+            ))}
           </div>
         </div>
       )}
 
       {/* Row 6 — Recent Transactions */}
-      <div className="bg-surface-raised border border-border rounded-2xl p-5 mb-24">
+      <div className="bg-surface-raised border border-border rounded-xl p-5 mb-24">
         <div className="flex items-center justify-between mb-3">
-          <p className="text-sm font-semibold text-text-base">Recent Transactions</p>
+          <p className="text-base font-semibold text-text-base">Recent Transactions</p>
           <Link href="/transactions" className="text-xs text-brand hover:underline">See all →</Link>
         </div>
         {(data?.recent_transactions.length ?? 0) === 0 ? (
@@ -438,7 +551,7 @@ export default function DashboardPage() {
       {/* Add Expense Button */}
       <button
         onClick={() => setDrawerOpen(true)}
-        className="fixed bottom-6 right-6 bg-brand hover:bg-brand-dim text-[#0A0A0A] font-bold rounded-2xl px-5 py-3.5 flex items-center gap-2 text-sm transition-colors z-30 shadow-lg"
+        className="fixed bottom-6 right-6 bg-brand hover:bg-brand-dim text-[#0A0A0A] font-bold rounded-xl px-5 py-3.5 flex items-center gap-2 text-sm transition-colors z-30 shadow-lg"
       >
         <Plus size={18} />
         Add Expense

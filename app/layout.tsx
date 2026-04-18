@@ -1,14 +1,11 @@
 // app/layout.tsx
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
 import { Toaster } from 'react-hot-toast'
 import AuthProvider from '@/components/AuthProvider'
 import ThemeProvider from '@/components/ThemeProvider'
 import Sidebar from '@/components/Sidebar'
-import { FinanceChat } from '@/components/FinanceGPT'  // ← ADD THIS
+import { FinanceChat } from '@/components/FinanceGPT'
 import './globals.css'
-
-const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: 'FinPath — AI Personal Finance',
@@ -18,7 +15,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.className} min-h-screen bg-surface text-text-base`}>
+      <body className="min-h-screen bg-surface text-text-base font-sans antialiased">
         <ThemeProvider>
           <AuthProvider>
             <div className="flex min-h-screen">
@@ -27,17 +24,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 {children}
               </main>
             </div>
-            <FinanceChat />  {/* ← ADD THIS - Chat appears on all pages */}
+            <FinanceChat />
             <Toaster
               position="top-right"
               toastOptions={{
                 style: {
-                  borderRadius: 12,
-                  fontSize: 14,
-                  fontFamily: inter.style.fontFamily,
+                  borderRadius: 10,
+                  fontSize: 13,
+                  fontFamily: 'Satoshi, system-ui, sans-serif',
                   background: 'var(--surface-raised)',
                   color: 'var(--text-base)',
                   border: '1px solid var(--border)',
+                  boxShadow: '0 4px 24px rgba(0,0,0,0.12)',
                 },
               }}
             />

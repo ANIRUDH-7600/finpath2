@@ -124,7 +124,7 @@ export function FinanceChat() {
     return (
       <div 
         onClick={() => setIsMinimized(false)}
-        className="fixed bottom-24 right-6 bg-surface-raised border border-brand/30 rounded-2xl p-3 shadow-xl z-40 cursor-pointer hover:border-brand transition-all group"
+        className="fixed bottom-24 right-6 bg-surface-raised border border-brand/30 rounded-xl p-3 shadow-xl z-40 cursor-pointer hover:border-brand transition-all group"
       >
         <div className="flex items-center gap-2">
           <div className="bg-brand rounded-lg p-1.5">
@@ -138,7 +138,7 @@ export function FinanceChat() {
   }
 
   return (
-    <div className="fixed bottom-24 right-6 w-[400px] h-[600px] bg-surface-raised border border-border rounded-2xl shadow-2xl flex flex-col z-40 overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
+    <div className="fixed bottom-24 right-6 w-[400px] h-[600px] bg-surface-raised border border-border rounded-xl shadow-2xl flex flex-col z-40 overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-border bg-gradient-to-r from-brand-muted/20 to-transparent">
         <div className="flex items-center gap-2">
@@ -174,7 +174,7 @@ export function FinanceChat() {
             className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
           >
             <div
-              className={`max-w-[85%] rounded-2xl px-4 py-2 text-sm ${
+              className={`max-w-[85%] rounded-xl px-4 py-2 text-sm ${
                 message.role === 'user'
                   ? 'bg-brand text-[#0A0A0A]'
                   : 'bg-surface border border-border text-text-base'
@@ -196,7 +196,7 @@ export function FinanceChat() {
         
         {isLoading && (
           <div className="flex justify-start">
-            <div className="bg-surface border border-border rounded-2xl px-4 py-2 text-sm text-text-muted">
+            <div className="bg-surface border border-border rounded-xl px-4 py-2 text-sm text-text-muted">
               <Loader2 size={14} className="animate-spin inline mr-2" />
               Thinking...
             </div>

@@ -1,11 +1,11 @@
-// prisma/schema.prisma
+// prisma/schema.prisma - COMPLETE FIXED VERSION
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "sqlite"
-  url      = "file:./dev.db"  // This creates dev.db file in prisma folder
+  url      = "file:./dev.db"
 }
 
 model User {
@@ -26,6 +26,7 @@ model User {
   goals               Goal[]
   portfolio_profiles  PortfolioProfile[]
   nudge_logs          NudgeLog[]
+  investments         Investment[]       // ADD THIS LINE
 
   @@map("users")
 }
@@ -47,29 +48,48 @@ model Transaction {
 }
 
 model Goal {
-  id                  String   @id @default(cuid())
-  user_id             String
-  title               String
-  target_amount       Float
-  current_savings     Float    @default(0)
-  deadline_months     Int
-  daily_save_required Float?
-  narrative           String?
-  status              String   @default("active")
-  created_at          DateTime @default(now())
+  id                   String             @id @default(cuid())
+  user_id              String
+  title                String
+  target_amount        Float
+  current_savings      Float              @default(0)
+  deadline_months      Int
+  daily_save_required  Float?
+  monthly_sip          Float?
+  inflation_adjusted   Float?
+  projected_return     Float?
+  asset_allocation     String?
+  narrative            String?
+  status               String             @default("active")
+  created_at           DateTime           @default(now())
 
-  user                User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user                 User               @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  contributions        GoalContribution[]
 
   @@index([user_id])
   @@map("goals")
+}
+
+model GoalContribution {
+  id         String   @id @default(cuid())
+  goal_id    String
+  amount     Float
+  month      String
+  note       String?
+  created_at DateTime @default(now())
+
+  goal       Goal     @relation(fields: [goal_id], references: [id], onDelete: Cascade)
+
+  @@index([goal_id])
+  @@map("goal_contributions")
 }
 
 model PortfolioProfile {
   id          String   @id @default(cuid())
   user_id     String   @unique
   risk_score  Int?
-  allocation  String?   // Stored as JSON string
-  instruments String?   // Stored as JSON string
+  allocation  String?
+  instruments String?
   sip_amount  Float?
   reasoning   String?
   macro_note  String?
@@ -100,7 +120,7 @@ model NudgeLog {
 model SpendingPattern {
   id           String   @id @default(cuid())
   user_id      String
-  pattern_type String   // "micro_transactions", "subscription_creep", "late_night", etc.
+  pattern_type String
   amount       Float
   frequency    String
   suggestion   String
@@ -114,12 +134,137 @@ model SpendingPattern {
 model BehavioralInsight {
   id          String   @id @default(cuid())
   user_id     String
-  insight_type String  // "leakage", "saving_opportunity", "behavioral_tip"
+  insight_type String
   message     String
-  priority    String   // "high", "medium", "low"
+  priority    String
   read        Boolean  @default(false)
   created_at  DateTime @default(now())
 
   @@index([user_id])
   @@map("behavioral_insights")
+}
+
+model AutoSweep {
+  id           String    @id @default(cuid())
+  user_id      String
+  week_key     String
+  total_surplus Float
+  allocations  String
+  status       String    @default("pending")
+  created_at   DateTime  @default(now())
+  approved_at  DateTime?
+
+  @@index([user_id])
+  @@map("auto_sweeps")
+}
+
+model PaperPortfolio {
+  id             String         @id @default(cuid())
+  user_id        String         @unique
+  cash_balance   Float          @default(0)
+  agent_enabled  Boolean        @default(false)
+  agent_mode     String         @default("suggest")
+  created_at     DateTime       @default(now())
+
+  holdings       PaperHolding[]
+  trades         PaperTrade[]
+
+  @@map("paper_portfolios")
+}
+
+model PaperHolding {
+  id            String   @id @default(cuid())
+  portfolio_id  String
+  symbol        String
+  name          String
+  asset_type    String
+  quantity      Float
+  avg_buy_price Float
+  created_at    DateTime @default(now())
+
+  portfolio     PaperPortfolio @relation(fields: [portfolio_id], references: [id], onDelete: Cascade)
+
+  @@index([portfolio_id])
+  @@map("paper_holdings")
+}
+
+model PaperTrade {
+  id           String   @id @default(cuid())
+  portfolio_id String
+  symbol       String
+  name         String
+  asset_type   String
+  action       String
+  quantity     Float
+  price        Float
+  total_value  Float
+  triggered_by String   @default("manual")
+  ai_reason    String?
+  created_at   DateTime @default(now())
+
+  portfolio    PaperPortfolio @relation(fields: [portfolio_id], references: [id], onDelete: Cascade)
+
+  @@index([portfolio_id])
+  @@map("paper_trades")
+}
+
+model AIAgentDecision {
+  id         String   @id @default(cuid())
+  user_id    String
+  symbol     String
+  name       String
+  action     String
+  quantity   Float
+  price      Float
+  reason     String
+  confidence String
+  status     String   @default("pending")
+  created_at DateTime @default(now())
+
+  @@index([user_id])
+  @@map("ai_agent_decisions")
+}
+
+model Sip {
+  id              String   @id @default(cuid())
+  user_id         String
+  asset_name      String
+  monthly_amount  Float
+  start_date      String
+  expected_return Float    @default(12)
+  created_at      DateTime @default(now())
+
+  @@index([user_id])
+  @@map("sips")
+}
+
+model Emi {
+  id               String   @id @default(cuid())
+  user_id          String
+  loan_name        String
+  emi_amount       Float
+  interest_rate    Float    @default(10)
+  remaining_months Int
+  loan_type        String   @default("personal")
+  created_at       DateTime @default(now())
+
+  @@index([user_id])
+  @@map("emis")
+}
+
+model Investment {
+  id              String   @id @default(cuid())
+  user_id         String
+  asset_type      String
+  fund_name       String
+  amount          Float
+  sip_amount      Float?
+  transaction_date DateTime @default(now())
+  status          String   @default("active")
+  created_at      DateTime @default(now())
+
+  user            User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@map("investments")
 }

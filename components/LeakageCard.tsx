@@ -10,7 +10,7 @@ interface Props {
 
 export default function LeakageCard({ pattern, amount, frequency, suggestion }: Props) {
   return (
-    <div className="relative bg-surface-raised border border-red-500/20 border-l-2 border-l-red-500 rounded-2xl p-5 min-w-[240px] hover:border-red-500/40 transition-colors">
+    <div className="relative bg-surface-raised border border-red-500/20 border-l-2 border-l-red-500 rounded-xl p-5 min-w-[240px] hover:border-red-500/40 transition-colors">
       <AlertTriangle size={16} className="absolute top-4 right-4 text-red-400" />
       <p className="text-red-400 font-semibold text-sm pr-6">{pattern}</p>
       <p className="text-red-400 text-xl font-bold mt-1">{formatINR(amount)}</p>

@@ -28,7 +28,7 @@ interface PendingTx {
   note?: string
 }
 
-const inputClass = "w-full bg-[#1C1C1C] border border-[#2A2A2A] rounded-xl px-4 py-3 text-sm text-white placeholder:text-[#555555] focus:outline-none focus:ring-2 focus:ring-[#02FF9D]/30 focus:border-[#02FF9D] transition"
+const inputClass = "w-full bg-surface border border-[#2A2A2A] rounded-xl px-4 py-3 text-sm text-white placeholder:text-[#555555] focus:outline-none focus:ring-2 focus:ring-[#02FF9D]/30 focus:border-[#02FF9D] transition"
 
 export default function AddExpenseDrawer({ isOpen, onClose, activeGoalId, userId, onSuccess }: Props) {
   const today = new Date().toISOString().split('T')[0]

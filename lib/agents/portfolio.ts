@@ -1,4 +1,4 @@
-import { claude } from '@/lib/claude'
+import { claude, CLAUDE_MODEL } from '@/lib/claude'
 import type { PortfolioSuggestion } from '@/types'
 
 function getFallback(riskScore: number, income: number): PortfolioSuggestion {
@@ -59,7 +59,7 @@ export async function suggestPortfolio(
 
   try {
     const response = await claude.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: CLAUDE_MODEL,
       max_tokens: 800,
       system:
         'You are a SEBI-aligned robo-advisor for Indian retail investors. Return ONLY raw valid JSON — no markdown, no backticks, no explanation. Return exactly: {"allocation":{"equity":0,"debt":0,"gold":0,"cash":0},"instruments":{"equity":["fund1","fund2"],"debt":["fund1","fund2"],"gold":["fund1","fund2"],"cash":["fund1","fund2"]},"sip_amount":0,"reasoning":"2-3 sentences","macro_note":"1 sentence"}. allocation percentages must sum to 100. Use real Indian fund names like: Nifty 50 Index Fund, Parag Parikh Flexi Cap, HDFC Short Term Debt Fund, Sovereign Gold Bond, Paytm Money Liquid Fund, Mirae Asset Emerging Bluechip, ICICI Prudential Corporate Bond Fund.',

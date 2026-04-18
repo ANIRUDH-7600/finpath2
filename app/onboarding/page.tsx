@@ -33,7 +33,7 @@ const RISK_QUESTIONS = [
   },
 ]
 
-const inputClass = "w-full bg-[#1C1C1C] border border-border rounded-xl px-4 py-3 text-sm text-text-base placeholder:text-text-faint focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition"
+const inputClass = "w-full bg-surface border border-border rounded-xl px-4 py-3 text-sm text-text-base placeholder:text-text-faint focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition"
 
 export default function OnboardingPage() {
   const router = useRouter()
@@ -154,7 +154,7 @@ export default function OnboardingPage() {
           <span className="text-2xl font-bold text-text-base">FinPath</span>
         </div>
 
-        <div className="bg-surface-raised border border-border rounded-2xl p-7">
+        <div className="bg-surface-raised border border-border rounded-xl p-7">
           <div className="flex gap-2 mb-7">
             {[1, 2, 3].map((s) => (
               <div key={s} className="flex-1 h-1 rounded-full overflow-hidden bg-border">
@@ -265,7 +265,7 @@ export default function OnboardingPage() {
                 onDrop={handleDrop}
                 onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
                 onDragLeave={() => setDragOver(false)}
-                className={`border-2 border-dashed rounded-2xl p-8 text-center transition-colors ${
+                className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors ${
                   dragOver ? 'border-brand bg-brand-muted' : 'border-border hover:border-brand/40'
                 }`}
               >

@@ -10,7 +10,10 @@
       "Bash(sed -n '145,153p' C:/Users/ANIRUDH/projects/finpath/app/api/parse-csv/route.ts)",
       "Bash(sed -n '138,143p' C:/Users/ANIRUDH/projects/finpath/app/api/parse-pdf/route.ts)",
       "Bash(node -e 'const {PrismaClient} = require\\('\\\\''@prisma/client'\\\\''\\); const p = new PrismaClient\\(\\); p.$queryRaw`SELECT name FROM sqlite_master WHERE type='\\\\''table'\\\\''`.then\\(r => { console.log\\('\\\\''Tables:'\\\\'', r.map\\(t => t.name\\).join\\('\\\\'', '\\\\''\\)\\); p.$disconnect\\(\\) }\\).catch\\(e => { console.error\\('\\\\''DB error:'\\\\'', e.message\\); p.$disconnect\\(\\) }\\)')",
-      "Bash(node -e 'const {PrismaClient} = require\\('\\\\''@prisma/client'\\\\''\\); const p = new PrismaClient\\(\\); p.$queryRaw`SELECT name FROM sqlite_master WHERE type='\\\\''table'\\\\''`.then\\(r => { console.log\\(r.map\\(t=>t.name\\).join\\('\\\\'', '\\\\''\\)\\); p.$disconnect\\(\\) }\\)')"
+      "Bash(node -e 'const {PrismaClient} = require\\('\\\\''@prisma/client'\\\\''\\); const p = new PrismaClient\\(\\); p.$queryRaw`SELECT name FROM sqlite_master WHERE type='\\\\''table'\\\\''`.then\\(r => { console.log\\(r.map\\(t=>t.name\\).join\\('\\\\'', '\\\\''\\)\\); p.$disconnect\\(\\) }\\)')",
+      "Bash(node *)",
+      "Bash('.test')",
+      "Bash(npx next *)"
     ]
   }
 }
